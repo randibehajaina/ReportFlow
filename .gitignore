@@ -1,0 +1,23 @@
+# Clés d'API & Environnement secret
+.env
+.env.local
+.env.*.local
+
+# Dépendances Node.js
+node_modules/
+
+# Logs et rapports
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Fichiers système & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Documentation interne & suivi de projet
+JOURNAL_DE_BORD.md
+ROADMAP.md
+GUIDE_TECHNIQUE_ET_LEXIQUE.md
