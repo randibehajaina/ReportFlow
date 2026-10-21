@@ -5,6 +5,8 @@ const multer = require('multer');
 
 const { analyserContenu } = require('./services/geminiService');
 const { insererCompteRendu } = require('./services/notionService');
+const { genererDocumentWord } = require('./services/wordService');
+const { televerserDocumentWord } = require('./services/googleDriveService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,9 +42,18 @@ const upload = multer({
   }
 });
 
-// Vue principale
+// Vue principale avec injection des URLs directes Cloud
 app.get('/', (req, res) => {
-  res.render('index');
+  const driveFolderId = process.env.GOOGLE_DRIVE_FOLDER_ID || null;
+  const databaseId = process.env.DATABASE_ID || null;
+
+  const driveUrl = driveFolderId ? `https://drive.google.com/drive/folders/${driveFolderId}` : null;
+  const notionUrl = databaseId ? `https://notion.so/${databaseId.replace(/-/g, '')}` : null;
+
+  res.render('index', {
+    driveUrl,
+    notionUrl
+  });
 });
 
 // Pipeline d'automatisation : support du texte brut, de documents et de pistes audio (jusqu'à 2h)
@@ -79,13 +90,42 @@ app.post('/api/analyser', (req, res, next) => {
       fichier
     });
 
-    // 2. Persistance automatique dans la base Notion
-    const notionPageId = await insererCompteRendu(donneesStructurees);
+    // 2. Génération du rapport Word (.docx) officiel en mémoire vive
+    let lienDrive = null;
+    try {
+      const bufferWord = await genererDocumentWord(donneesStructurees);
+
+      const slugClient = (donneesStructurees.client || 'Projet')
+        .trim()
+        .replace(/[^a-zA-Z0-9À-ÿ\s_-]/g, '')
+        .replace(/\s+/g, '-')
+        .substring(0, 40);
+
+      const dateFichier = donneesStructurees.date || new Date().toISOString().split('T')[0];
+      const nomFichier = `Compte-rendu-${slugClient}-${dateFichier}.docx`;
+
+      // 3. Téléversement Cloud vers Google Drive via Compte de Service
+      const driveRes = await televerserDocumentWord({
+        nomFichier,
+        buffer: bufferWord
+      });
+
+      lienDrive = driveRes?.webViewLink || null;
+    } catch (errDrive) {
+      console.warn('[Server] Note téléversement Google Drive :', errDrive.message);
+    }
+
+    // 4. Persistance automatique dans Notion (avec la Date et le lien Google Drive)
+    const notionPageId = await insererCompteRendu({
+      ...donneesStructurees,
+      lienDrive
+    });
 
     return res.status(200).json({
       succes: true,
       notionId: notionPageId,
       donnees: donneesStructurees,
+      lienDrive,
       source: fichier ? { nom: fichier.originalname, taille: fichier.size } : null
     });
   } catch (err) {
@@ -95,6 +135,50 @@ app.post('/api/analyser', (req, res, next) => {
       succes: false,
       erreur: err.message || 'Une erreur interne est survenue durant le traitement.',
       notionDetails: err.details || null
+    });
+  }
+});
+
+// Route de génération et de téléchargement du rapport Word officiel (.docx)
+app.post('/api/generer-word', async (req, res) => {
+  const { client, date, synthese, actions } = req.body || {};
+
+  if (!client && !synthese && !actions) {
+    return res.status(400).json({
+      succes: false,
+      erreur: 'Données insuffisantes pour générer le document Word.'
+    });
+  }
+
+  try {
+    const bufferWord = await genererDocumentWord({
+      client: client || 'Projet',
+      date: date || null,
+      synthese: synthese || '',
+      actions: actions || ''
+    });
+
+    // Formatage d'un nom de fichier propre et sécurisé
+    const slugClient = (client || 'Projet')
+      .trim()
+      .replace(/[^a-zA-Z0-9À-ÿ\s_-]/g, '')
+      .replace(/\s+/g, '-')
+      .substring(0, 40);
+
+    const dateAujourdhui = new Date().toISOString().split('T')[0];
+    const nomFichier = `Compte-rendu-${slugClient}-${dateAujourdhui}.docx`;
+
+    // En-têtes HTTP pour déclencher le téléchargement binaire dans le navigateur
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${nomFichier}"; filename*=UTF-8''${encodeURIComponent(nomFichier)}`);
+    res.setHeader('Content-Length', bufferWord.length);
+
+    return res.send(bufferWord);
+  } catch (err) {
+    console.error('[API /api/generer-word]', err.message);
+    return res.status(500).json({
+      succes: false,
+      erreur: 'Impossible de générer le fichier Word : ' + err.message
     });
   }
 });

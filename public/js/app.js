@@ -39,6 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const actionsChecklist = document.getElementById('actions-checklist');
   const resJson = document.getElementById('res-json');
 
+  // Éléments d'export Word (.docx) & Google Docs
+  const btnTelechargerWord = document.getElementById('btn-telecharger-word');
+  const btnTelechargerWordLabel = document.getElementById('btn-telecharger-word-label');
+  const iconTelechargerWord = document.getElementById('icon-telecharger-word');
+  const spinnerWord = document.getElementById('spinner-word');
+  const linkGoogleDocs = document.getElementById('link-google-docs');
+  const linkNotionAction = document.getElementById('link-notion-action');
+  let dernieresDonnees = null;
+
   // Initialisation de la librairie d'icônes Lucide
   if (window.lucide) {
     lucide.createIcons();
@@ -319,7 +328,9 @@ Le budget prévisionnel est validé mais il faut envoyer la proposition techniqu
     }
   }
 
-  function displayResults({ notionId, donnees }) {
+  function displayResults({ notionId, donnees, lienDrive }) {
+    dernieresDonnees = donnees; // Mémorisation pour l'export Word
+
     resultSkeleton.classList.add('hidden');
     resultPlaceholder.classList.add('hidden');
     resultContent.classList.remove('hidden');
@@ -332,10 +343,98 @@ Le budget prévisionnel est validé mais il faut envoyer la proposition techniqu
 
     renderChecklist(donnees.actions);
 
+    // Configuration du lien Google Docs
+    if (lienDrive && linkGoogleDocs) {
+      linkGoogleDocs.href = lienDrive;
+      linkGoogleDocs.classList.remove('hidden');
+      linkGoogleDocs.classList.add('inline-flex');
+    } else if (linkGoogleDocs) {
+      linkGoogleDocs.classList.add('hidden');
+      linkGoogleDocs.classList.remove('inline-flex');
+    }
+
+    // Configuration du lien direct vers la page Notion spécifique créée
+    if (notionId && linkNotionAction) {
+      const cleanNotionId = String(notionId).replace(/-/g, '');
+      linkNotionAction.href = `https://notion.so/${cleanNotionId}`;
+      linkNotionAction.classList.remove('hidden');
+      linkNotionAction.classList.add('inline-flex');
+    } else if (linkNotionAction) {
+      linkNotionAction.classList.add('hidden');
+      linkNotionAction.classList.remove('inline-flex');
+    }
+
     if (window.innerWidth < 1024) {
       resultContent.scrollIntoView({ behavior: 'smooth' });
     }
   }
+
+  // ============================================================================
+  // Téléchargement du Livrable Word (.docx)
+  // ============================================================================
+
+  btnTelechargerWord?.addEventListener('click', async () => {
+    if (!dernieresDonnees) return;
+
+    btnTelechargerWord.disabled = true;
+    spinnerWord.classList.remove('hidden');
+    iconTelechargerWord.classList.add('hidden');
+    btnTelechargerWordLabel.textContent = 'Génération du livrable...';
+
+    try {
+      const response = await fetch('/api/generer-word', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dernieresDonnees)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.erreur || 'Échec de la génération du document Word.');
+      }
+
+      // Extraction du nom de fichier depuis l'en-tête Content-Disposition ou fallback
+      let nomFichier = `Compte-rendu-${(dernieresDonnees.client || 'Projet').trim().replace(/\s+/g, '-')}.docx`;
+      const disposition = response.headers.get('content-disposition');
+      if (disposition && disposition.includes('filename*=')) {
+        const match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+        if (match && match[1]) {
+          nomFichier = decodeURIComponent(match[1]);
+        }
+      } else if (disposition && disposition.includes('filename=')) {
+        const match = disposition.match(/filename="?([^";]+)"?/i);
+        if (match && match[1]) {
+          nomFichier = match[1];
+        }
+      }
+
+      // Création du Blob binaire et téléchargement transparent
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = nomFichier;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      btnTelechargerWordLabel.textContent = 'Téléchargé !';
+      setTimeout(() => {
+        btnTelechargerWordLabel.textContent = 'Télécharger le rapport';
+      }, 2500);
+
+    } catch (err) {
+      showError(err.message || 'Une erreur est survenue lors du téléchargement.');
+      btnTelechargerWordLabel.textContent = 'Télécharger le rapport';
+    } finally {
+      spinnerWord.classList.add('hidden');
+      iconTelechargerWord.classList.remove('hidden');
+      btnTelechargerWord.disabled = false;
+    }
+  });
 
   function showError(msg) {
     errorMessage.textContent = msg;

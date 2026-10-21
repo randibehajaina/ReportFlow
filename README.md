@@ -19,11 +19,14 @@
   - *Fichiers < 20 Mo* : Encodage direct en mémoire vive (Base64 `inlineData`) pour une latence minimale sans écriture disque.
   * *Fichiers ≥ 20 Mo* : Téléversement sécurisé vers l'API Google Files officielle (`ai.files.upload`) avec suppression automatique locale et distante dès l'analyse terminée.
   * *Chaîne de secours multi-modèles (Fallback)* : Basculement automatique en cas de charge élevée (`gemini-2.5-flash` → `gemini-2.0-flash` → `gemini-3.8-flash`).
-- **Intégration Notion** : Insertion automatique des données normalisées (`Client / Projet`, `Synthèse IA`, `Actions à mener`).
+- **Génération de rapports exécutifs Word (.docx)** : Conception de documents stylisés avec la charte Rose Blush / Pastel, typographie hiérarchisée, métadonnées dynamiques et puces d'actions (100% en mémoire RAM via `docx`).
+- **Synchronisation Cloud Google Drive & Google Docs** : Téléversement automatique via flux binaire (Stream PassThrough) et génération d'un lien d'édition collaborative en ligne.
+- **Intégration Notion** : Insertion automatique des données normalisées (`Client / Projet`, `Date`, `Synthèse IA`, `Actions à mener`, et `Lien Document (Drive)`).
 - **Interface utilisateur** :
   - Palette sombre ardoise sans contraste agressif.
   - Icônes vectorielles standardisées (Lucide Icons).
   - Restitution du plan d'action sous forme de checklist interactive.
+  - Boutons de téléchargement direct du Word (.docx) et d'ouverture en ligne dans Google Docs.
   - Copie instantanée de l'identifiant de page Notion et du résumé.
 
 ---
@@ -32,18 +35,24 @@
 
 ```text
 ReportFlow/
-├── index.js                     # Point d'entrée Express, configuration Multer & routage API
+├── index.js                          # Point d'entrée Express, configuration Multer & routage API
 ├── services/
-│   ├── geminiService.js         # Client IA, gestion multimodale & stratégie hybride
-│   └── notionService.js         # Client REST Notion (Axios) & persistance
+│   ├── geminiService.js              # Client IA, analyse multimodale & stratégie hybride
+│   ├── wordService.js                # Moteur de génération de documents Word (.docx) en RAM
+│   ├── googleDriveService.js         # Client Google Drive API (OAuth 2.0 & Service Account)
+│   └── notionService.js              # Client REST Notion (Axios) & persistance
+├── scripts/
+│   └── connecter-drive.js            # Script d'autorisation OAuth 2.0 en un clic (Port 3001)
 ├── views/
-│   └── index.ejs                # Vue dynamique EJS (Tailwind CSS, Lucide Icons)
+│   └── index.ejs                     # Vue dynamique EJS (Tailwind CSS, Lucide Icons)
 ├── public/
-│   └── js/app.js                # Contrôleur client asynchrone (FormData, Fetch, UX)
+│   └── js/app.js                     # Contrôleur client asynchrone (FormData, Fetch, UX)
 └── Documentation/
-    ├── README.md                # Documentation principale
-    ├── ROADMAP.md               # Feuille de route du projet
-    ├── JOURNAL_DE_BORD.md       # Historique des décisions et implémentations
+    ├── README.md                     # Documentation principale
+    ├── GUIDE_CONFIGURATION_GOOGLE_DRIVE.md # Guide pas-à-pas Google Drive & OAuth 2.0
+    ├── COURS_COMPTE_DE_SERVICE.md    # Cours complet M2M, SDK vs API et sécurité Cloud
+    ├── ROADMAP.md                    # Feuille de route du projet
+    ├── JOURNAL_DE_BORD.md            # Historique des décisions et implémentations
     └── GUIDE_TECHNIQUE_ET_LEXIQUE.md # Manuel technique détaillé
 ```
 
@@ -54,7 +63,9 @@ ReportFlow/
 | **Backend** | Node.js, Express 5 | Serveur HTTP et orchestration d'API |
 | **Ingestion fichiers** | Multer (`memoryStorage`) | Traitement sécurisé en mémoire vive |
 | **Moteur IA** | `@google/genai` (Gemini Flash) | Écoute audio, lecture documentaire et extraction JSON |
-| **Extraction Word** | Mammoth | Conversion des fichiers `.docx` en texte brut |
+| **Génération Word** | `docx` | Fabrication du compte-rendu stylisé en mémoire vive (RAM) |
+| **Stockage Cloud** | `googleapis` (Drive v3) | Téléversement sécurisé, permissions et URL Google Docs |
+| **Extraction Word** | Mammoth | Conversion des fichiers `.docx` en texte brut pour analyse |
 | **Intégration Notion** | Axios, Notion REST API (`2022-06-28`) | Création des fiches dans la base cible |
 | **Interface** | EJS, Tailwind CSS, Lucide Icons | Rendu côté serveur et composants d'interaction |
 

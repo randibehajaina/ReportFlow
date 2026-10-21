@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "auth:drive": "node scripts/connecter-drive.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -21,9 +22,11 @@
   "dependencies": {
     "@google/genai": "^2.30.0",
     "axios": "^1.20.0",
+    "docx": "^9.13.0",
     "dotenv": "^18.0.8",
     "ejs": "^7.0.2",
     "express": "^5.3.0",
+    "googleapis": "^187.0.0",
     "mammoth": "^1.13.0",
     "multer": "^2.4.0"
   },

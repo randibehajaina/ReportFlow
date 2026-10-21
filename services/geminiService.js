@@ -30,9 +30,10 @@ const FALLBACK_MODELS = [
 ];
 
 const PROMPT_INSTRUCTIONS = `Tu es un consultant senior chez ReportFlow.
-Analyse les notes, le document ou l'enregistrement audio de réunion fourni et extrais les informations dans un objet JSON avec exactement ces 3 clés :
+Analyse les notes, le document ou l'enregistrement audio de réunion fourni et extrais les informations dans un objet JSON avec exactement ces 4 clés :
 {
   "client": "Nom de l'entreprise ou du client",
+  "date": "Date de la réunion au format YYYY-MM-DD si mentionnée explicitement dans le contenu, sinon null",
   "synthese": "Résumé professionnel en 2 phrases maximum",
   "actions": "Liste des actions à faire (avec des tirets)"
 }`;

@@ -100,10 +100,53 @@
         </div>
       </div>
 
-      <!-- Indicateur Notion -->
-      <div class="flex items-center space-x-2 text-xs text-slate-400 bg-[#1c1e27] border border-[#282b36] px-3 py-1.5 rounded-full shadow-sm">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
-        <span class="text-[12px] font-medium text-slate-300">Notion connecté</span>
+      <!-- Cloud Status Hub : Accès direct Google Drive & Notion -->
+      <div class="flex items-center space-x-2 sm:space-x-2.5">
+        
+        <!-- Badge interactif Google Drive -->
+        <a 
+          href="<%= locals.driveUrl || '#' %>" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="group flex items-center space-x-2 text-xs bg-[#191b22] hover:bg-[#20232d] border border-[#262933] hover:border-[#383d4c] px-3 py-1.5 rounded-full transition-all duration-200 shadow-sm"
+          title="Ouvrir le dossier des comptes-rendus dans Google Drive"
+        >
+          <!-- SVG officiel Google Drive -->
+          <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+            <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+            <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+            <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+            <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+            <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+            <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+          </svg>
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)] animate-pulse"></span>
+          <span class="text-[12px] font-medium text-slate-300 group-hover:text-white transition-colors">Google Drive</span>
+          <svg class="w-3 h-3 text-slate-500 group-hover:text-slate-300 transition-colors hidden sm:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="14" y1="14" y2="10"/>
+          </svg>
+        </a>
+
+        <!-- Badge interactif Notion -->
+        <a 
+          href="<%= locals.notionUrl || '#' %>" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="group flex items-center space-x-2 text-xs bg-[#191b22] hover:bg-[#20232d] border border-[#262933] hover:border-[#383d4c] px-3 py-1.5 rounded-full transition-all duration-200 shadow-sm"
+          title="Ouvrir la base de données Notion"
+        >
+          <!-- SVG officiel Notion -->
+          <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6.015 13.513c3.424 2.71 4.544 2.56 10.822 2.128l58.987-4.256c2.428-.148 3.14-.852 2.28-2.71L73.978 2.378C72.552.41 70.418 0 67.57 0L10.005 3.968C6.301 4.248 5.161 5.39 5.73 7.828l.285 5.685z" fill="#ffffff"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M13.435 25.105v62.463c0 4.148 2.14 5.86 6.85 5.568l62.98-3.708c4.71-.282 5.28-3.284 5.28-6.998V20.106c0-3.714-1.57-5.286-4.99-4.998L18.425 18.96c-3.71.282-4.99 2.428-4.99 6.145zm58.557 3.568c.285 1.285-.43 2.57-1.854 2.71l-3.57.574v43.275c-2.14 1.144-4.566 1.855-6.85 1.855-3.71 0-5.14-1.285-7.994-4.714L34.56 42.667v26.99l5.14 1.143c1.425.286 1.854 1.57 1.425 2.856-.43 1.286-1.57 1.57-3.71 1.713l-11.42 1.002c-1.43.143-2.14-.716-1.712-2.144.285-1.286 1.14-2.144 2.567-2.429l3.996-.572V34.526l-4.71-.43c-1.427-.143-2-1.286-1.57-2.57.428-1.286 1.57-1.572 3.71-1.715l13.13-1.143 18.27 28.277V32.955l-4.28-.572c-1.427-.143-1.855-1.429-1.427-2.714.43-1.286 1.57-1.572 3.71-1.715l11.42-.714c1.712-.143 2.14.714 2.568 2.428z" fill="#ffffff"/>
+          </svg>
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)] animate-pulse"></span>
+          <span class="text-[12px] font-medium text-slate-300 group-hover:text-white transition-colors">Notion</span>
+          <svg class="w-3 h-3 text-slate-500 group-hover:text-slate-300 transition-colors hidden sm:block" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="14" y1="14" y2="10"/>
+          </svg>
+        </a>
+
       </div>
 
     </div>
@@ -118,7 +161,7 @@
         Rédigez vos notes, obtenez un résumé clair
       </h1>
       <p class="text-sm text-slate-400 mt-1.5 leading-relaxed">
-        Collez votre brouillon de réunion. Nous identifions le client, résumons l'essentiel et enregistrons la fiche directement dans votre espace Notion.
+        Collez vos notes ou déposez un audio. Nous extrayons le client, générons un rapport Word officiel et synchronisons la fiche en direct dans Notion et Google Drive.
       </p>
 
       <!-- Schéma visuel en 3 étapes avec vraies icônes vectorielles -->
@@ -126,10 +169,10 @@
         
         <!-- Étape 1 -->
         <span class="flex items-center gap-1.5 text-slate-300 font-medium">
-          <svg class="w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="w-3.5 h-3.5 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
           </svg>
-          Notes brutes
+          Notes & Audio
         </span>
 
         <svg class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -138,10 +181,10 @@
 
         <!-- Étape 2 -->
         <span class="flex items-center gap-1.5 text-slate-300 font-medium">
-          <svg class="w-4 h-4 text-sky-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="w-3.5 h-3.5 text-sky-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
           </svg>
-          Synthèse propre
+          Synthèse IA
         </span>
 
         <svg class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -150,10 +193,10 @@
 
         <!-- Étape 3 -->
         <span class="flex items-center gap-1.5 text-emerald-400 font-medium">
-          <svg class="w-4 h-4 text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="w-3.5 h-3.5 text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
           </svg>
-          Rangé dans Notion
+          Synchro Notion & Drive
         </span>
 
       </div>
@@ -388,24 +431,29 @@
         <!-- ÉTAT 3 : Fiche terminée et enregistrée -->
         <div id="result-content" class="hidden space-y-3 animate-calm">
           
-          <div class="calm-card rounded-2xl overflow-hidden">
-            
-            <!-- Bandeau de confirmation Notion -->
-            <div class="px-5 py-3 border-b border-[#252834] bg-[#16181f]/80 flex items-center justify-between">
-              <div class="flex items-center space-x-2">
-                <svg class="w-4 h-4 text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 6 9 17l-5-5"/>
-                </svg>
-                <span class="text-xs font-semibold text-slate-200">Enregistré dans Notion</span>
+              <!-- Bandeau de confirmation Cloud double (Notion & Drive) -->
+            <div class="px-5 py-3 border-b border-[#252834] bg-[#16181f]/80 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-6 h-6 rounded-full bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-sm">
+                  <svg class="w-3.5 h-3.5 text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6 9 17l-5-5"/>
+                  </svg>
+                </div>
+                <div>
+                  <span class="text-xs font-semibold text-slate-100 flex items-center gap-1.5">
+                    Synchronisé avec succès
+                    <span class="text-[10px] text-emerald-300 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-full font-medium">Notion + Drive</span>
+                  </span>
+                </div>
               </div>
 
-              <!-- ID Notion & Bouton Copier avec icône -->
+              <!-- ID Notion & Bouton Copier -->
               <div class="flex items-center space-x-1.5 text-xs text-slate-400">
-                <span class="text-[11px] font-mono truncate max-w-[140px]" id="notion-page-id"></span>
+                <span class="text-[11px] font-mono truncate max-w-[130px]" id="notion-page-id"></span>
                 <button 
                   type="button" 
                   id="btn-copy-id" 
-                  class="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-[#252834] hover:bg-[#2f3342] text-[11px] text-slate-300 transition-colors"
+                  class="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-[#252834] hover:bg-[#2f3342] text-[11px] text-slate-300 hover:text-white transition-colors"
                   title="Copier l'identifiant de la page Notion"
                 >
                   <svg class="w-3 h-3 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -461,6 +509,84 @@
               </details>
             </div>
 
+          </div>
+
+          <!-- Carte d'Action : Export Word, Google Docs & Notion -->
+          <div class="calm-card rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border border-[#2d303b] bg-gradient-to-r from-[#171922] via-[#1a1c26] to-[#1e1b24]">
+            <div class="flex items-center space-x-3.5">
+              <div class="w-10 h-10 rounded-xl bg-[#232634] border border-[#34384a] flex items-center justify-center text-slate-200 shrink-0 shadow-inner">
+                <svg class="w-5 h-5 text-sky-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 13v-2"/><path d="M14 13v-2"/><path d="M10 17v-2"/><path d="M14 17v-2"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="text-xs sm:text-sm font-heading font-semibold text-slate-100 flex items-center gap-2">
+                  Livrables & Accès Cloud
+                  <span class="text-[10px] font-normal uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#202534] text-sky-300 border border-[#2d354d]">Synchronisé</span>
+                </h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">Ouvrez directement dans Notion, éditez dans Google Docs ou téléchargez le Word</p>
+              </div>
+            </div>
+
+            <!-- Trio de boutons d'action avec logos officiels -->
+            <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+              
+              <!-- 1. Bouton Ouvrir sur Notion -->
+              <a 
+                id="link-notion-action"
+                href="#"
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="hidden flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-200 hover:text-white bg-[#222532] hover:bg-[#2b2f3f] border border-[#313647] hover:border-slate-400 transition-all shadow-sm group active:scale-[0.98]"
+                title="Ouvrir la fiche directement dans Notion"
+              >
+                <!-- Mini SVG Notion -->
+                <svg class="w-3.5 h-3.5 shrink-0 group-hover:scale-110 transition-transform" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6.015 13.513c3.424 2.71 4.544 2.56 10.822 2.128l58.987-4.256c2.428-.148 3.14-.852 2.28-2.71L73.978 2.378C72.552.41 70.418 0 67.57 0L10.005 3.968C6.301 4.248 5.161 5.39 5.73 7.828l.285 5.685z" fill="#ffffff"/>
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M13.435 25.105v62.463c0 4.148 2.14 5.86 6.85 5.568l62.98-3.708c4.71-.282 5.28-3.284 5.28-6.998V20.106c0-3.714-1.57-5.286-4.99-4.998L18.425 18.96c-3.71.282-4.99 2.428-4.99 6.145zm58.557 3.568c.285 1.285-.43 2.57-1.854 2.71l-3.57.574v43.275c-2.14 1.144-4.566 1.855-6.85 1.855-3.71 0-5.14-1.285-7.994-4.714L34.56 42.667v26.99l5.14 1.143c1.425.286 1.854 1.57 1.425 2.856-.43 1.286-1.57 1.57-3.71 1.713l-11.42 1.002c-1.43.143-2.14-.716-1.712-2.144.285-1.286 1.14-2.144 2.567-2.429l3.996-.572V34.526l-4.71-.43c-1.427-.143-2-1.286-1.57-2.57.428-1.286 1.57-1.572 3.71-1.715l13.13-1.143 18.27 28.277V32.955l-4.28-.572c-1.427-.143-1.855-1.429-1.427-2.714.43-1.286 1.57-1.572 3.71-1.715l11.42-.714c1.712-.143 2.14.714 2.568 2.428z" fill="#ffffff"/>
+                </svg>
+                <span>Fiche Notion</span>
+              </a>
+
+              <!-- 2. Bouton Ouvrir dans Google Docs (éditable en ligne) -->
+              <a 
+                id="link-google-docs"
+                href="#"
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="hidden flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium text-sky-200 bg-[#15233c] hover:bg-[#1c2e4e] border border-[#253e6c] hover:border-sky-400 transition-all shadow-sm group active:scale-[0.98]"
+                title="Ouvrir le compte-rendu dans Google Docs"
+              >
+                <!-- Mini SVG Google Docs -->
+                <svg class="w-3.5 h-3.5 shrink-0 group-hover:scale-110 transition-transform" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                  <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                  <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                  <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                  <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                  <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                  <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                </svg>
+                <span>Google Docs</span>
+              </a>
+
+              <!-- 3. Bouton Téléchargement Direct .docx -->
+              <button 
+                type="button" 
+                id="btn-telecharger-word"
+                class="flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-100 bg-[#34222c] hover:bg-[#442b3a] border border-[#543343] hover:border-[#C97A7E] transition-all shadow-sm group active:scale-[0.98]"
+                title="Télécharger le document Word (.docx) sur votre ordinateur"
+              >
+                <svg id="icon-telecharger-word" class="w-3.5 h-3.5 text-[#C97A7E] group-hover:translate-y-0.5 transition-transform" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+                </svg>
+                <svg id="spinner-word" class="hidden animate-spin w-3.5 h-3.5 text-[#C97A7E]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                <span id="btn-telecharger-word-label">Word (.docx)</span>
+              </button>
+
+            </div>
           </div>
 
         </div>

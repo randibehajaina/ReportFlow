@@ -2,6 +2,10 @@
 .env
 .env.local
 .env.*.local
+*credentials*.json
+*service-account*.json
+reportflow-*.json
+*.pem
 
 # Dépendances Node.js
 node_modules/
@@ -21,3 +25,6 @@ Thumbs.db
 JOURNAL_DE_BORD.md
 ROADMAP.md
 GUIDE_TECHNIQUE_ET_LEXIQUE.md
+COURS_COMPTE_DE_SERVICE.md
+GUIDE_CONFIGURATION_GOOGLE_DRIVE.md
+
