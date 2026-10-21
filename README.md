@@ -12,11 +12,11 @@ Plateforme d'automatisation pour la synthèse de réunions, la génération de c
 
 ```mermaid
 flowchart LR
-    A[Notes / Audio / Docs] --> B[Gemini Flash AI]
-    B --> C[Word Service (.docx)]
-    C --> D[Google Drive API]
-    B --> E[Notion REST API]
-    D -. Lien Docs .-> E
+    A["Notes / Audio / Docs"] --> B["Google Gemini AI"]
+    B --> C["Rapport Word (.docx)"]
+    C --> D["Google Drive API"]
+    B --> E["Notion REST API"]
+    D -. "Lien Docs" .-> E
 ```
 
 ---
