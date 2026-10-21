@@ -1,73 +1,84 @@
 # ReportFlow
 
-> Plateforme d'automatisation pour la synthèse de réunions et la synchronisation continue vers Notion, propulsée par Google Gemini.
+Plateforme d'automatisation pour la synthèse de réunions, la génération de comptes-rendus Word et la synchronisation continue vers Notion et Google Drive, propulsée par Google Gemini.
 
 ---
 
 ## Présentation
 
-**ReportFlow** est une application web conçue pour automatiser le traitement post-réunion. Elle permet d'ingérer des notes textuelles brutes, des documents de synthèse (PDF, Word) ou des enregistrements audio de réunions (jusqu'à 2 heures / 200 Mo), d'en extraire les points clés de manière structurée via l'intelligence artificielle multimodale, et de créer automatiquement une fiche exploitable dans une base de données **Notion**.
+**ReportFlow** est une application web conçue pour automatiser l'intégralité du traitement post-réunion. 
+
+À partir de notes brutes, de documents bureautiques (PDF, Word) ou d'enregistrements audio pouvant atteindre **2 heures (200 Mo)**, l'application extrait les informations critiques via l'IA multimodale, produit un rapport Word (`.docx`) structuré et assure une double synchronisation vers **Notion** et **Google Drive**.
+
+```mermaid
+flowchart LR
+    A[Notes / Audio / Docs] --> B[Gemini Flash AI]
+    B --> C[Word Service (.docx)]
+    C --> D[Google Drive API]
+    B --> E[Notion REST API]
+    D -. Lien Docs .-> E
+```
 
 ---
 
-## Fonctionnalités
+## Fonctionnalités Principales
 
-- **Traitement audio longue durée** : Prise en charge des enregistrements de réunions et mémos vocaux (`.mp3`, `.m4a`, `.wav`, `.aac`, `.ogg`, `.flac`, `.webm`) jusqu'à **200 Mo** (~2 heures).
-- **Analyse multimodale de documents** : Lecture native de fichiers PDF vectoriels et extraction de texte de documents Word (`.docx`) et texte brut (`.txt`).
-- **Saisie directe de notes** : Éditeur avec métriques en temps réel (compteur de mots et de caractères) et raccourcis clavier (`Ctrl + Entrée`).
-- **Architecture IA hybride et résiliente** :
-  - *Fichiers < 20 Mo* : Encodage direct en mémoire vive (Base64 `inlineData`) pour une latence minimale sans écriture disque.
-  * *Fichiers ≥ 20 Mo* : Téléversement sécurisé vers l'API Google Files officielle (`ai.files.upload`) avec suppression automatique locale et distante dès l'analyse terminée.
-  * *Chaîne de secours multi-modèles (Fallback)* : Basculement automatique en cas de charge élevée (`gemini-2.5-flash` → `gemini-2.0-flash` → `gemini-3.8-flash`).
-- **Génération de rapports exécutifs Word (.docx)** : Conception de documents stylisés avec la charte Rose Blush / Pastel, typographie hiérarchisée, métadonnées dynamiques et puces d'actions (100% en mémoire RAM via `docx`).
-- **Synchronisation Cloud Google Drive & Google Docs** : Téléversement automatique via flux binaire (Stream PassThrough) et génération d'un lien d'édition collaborative en ligne.
-- **Intégration Notion** : Insertion automatique des données normalisées (`Client / Projet`, `Date`, `Synthèse IA`, `Actions à mener`, et `Lien Document (Drive)`).
-- **Interface utilisateur** :
-  - Palette sombre ardoise sans contraste agressif.
-  - Icônes vectorielles standardisées (Lucide Icons).
-  - Restitution du plan d'action sous forme de checklist interactive.
-  - Boutons de téléchargement direct du Word (.docx) et d'ouverture en ligne dans Google Docs.
-  - Copie instantanée de l'identifiant de page Notion et du résumé.
+### Traitement Multimodal & Audio Longue Durée
+* Prise en charge des enregistrements audio de réunions (`.mp3`, `.m4a`, `.wav`, `.aac`, `.ogg`, `.flac`, `.webm`) jusqu'à **200 Mo** (~2 heures).
+* Analyse native de documents PDF vectoriels, extraction textuelle de fichiers Word (`.docx`) et texte brut (`.txt`).
+* Éditeur de saisie directe avec compteurs de mots et de caractères en temps réel et raccourci clavier (`Ctrl + Entrée`).
+
+### Architecture IA Résiliente
+* **Traitement en mémoire vive (< 20 Mo)** : Ingestion directe en Base64 (`inlineData`) sans écriture sur disque pour une latence minimale.
+* **Support haute capacité (≥ 20 Mo)** : Téléversement via l'API Google Files (`ai.files.upload`) avec suppression systématique des fichiers temporaires locaux et distants dans un bloc `finally`.
+* **Stratégie de secours multi-modèles (Fallback)** : Basculement séquentiel automatique en cas de charge élevée (`gemini-2.5-flash` → `gemini-2.0-flash` → `gemini-3.8-flash`).
+
+### Génération de Documents Word (.docx)
+* Assemblage binaire 100 % en mémoire vive (RAM) via la librairie `docx` (zéro I/O disque).
+* Mise en page exécutive : métadonnées de réunion, typographie hiérarchisée, synthèse rédigée et plan d'action sous forme de puces.
+
+### Double Synchronisation Cloud : Google Drive & Notion
+* **Google Drive & Google Docs** : Téléversement du fichier via flux continu (`stream.PassThrough`), attribution des droits collaboratifs (`role: writer`) et génération automatique d'un lien d'édition directe (`webViewLink`).
+* **Base de données Notion** : Insertion normalisée des métadonnées (`Client / Projet`, `Date`, `Synthèse IA`, `Actions à mener` et `Lien Document (Drive)`).
+
+### Interface Utilisateur Sobre & Réactive
+* **Hub d'état Cloud** : Badges d'état connectés pour Google Drive et Notion avec liens directs vers votre dossier et votre base de données.
+* **Checklist interactive** : Suivi des tâches de réunion avec cases à cocher fonctionnelles.
+* **Actions rapides** : Accès direct à la fiche Notion, ouverture immédiate dans Google Docs et téléchargement du livrable `.docx`.
 
 ---
 
-## Architecture Technique
+## Architecture du Projet
 
 ```text
 ReportFlow/
-├── index.js                          # Point d'entrée Express, configuration Multer & routage API
+├── index.js                     # Point d'entrée Express, configuration Multer et routage HTTP
 ├── services/
-│   ├── geminiService.js              # Client IA, analyse multimodale & stratégie hybride
-│   ├── wordService.js                # Moteur de génération de documents Word (.docx) en RAM
-│   ├── googleDriveService.js         # Client Google Drive API (OAuth 2.0 & Service Account)
-│   └── notionService.js              # Client REST Notion (Axios) & persistance
+│   ├── geminiService.js         # Client IA Gemini, analyse multimodale et chaîne de secours
+│   ├── wordService.js           # Moteur de génération de documents Word (.docx) en RAM
+│   ├── googleDriveService.js    # Client Google Drive API (OAuth 2.0 & Service Account)
+│   └── notionService.js         # Client REST Notion (Axios) et persistance des données
 ├── scripts/
-│   └── connecter-drive.js            # Script d'autorisation OAuth 2.0 en un clic (Port 3001)
+│   └── connecter-drive.js       # Script d'autorisation OAuth 2.0 locale (Port 3001)
 ├── views/
-│   └── index.ejs                     # Vue dynamique EJS (Tailwind CSS, Lucide Icons)
+│   └── index.ejs                # Vue principale EJS (Tailwind CSS, Lucide Icons)
 ├── public/
-│   └── js/app.js                     # Contrôleur client asynchrone (FormData, Fetch, UX)
-└── Documentation/
-    ├── README.md                     # Documentation principale
-    ├── GUIDE_CONFIGURATION_GOOGLE_DRIVE.md # Guide pas-à-pas Google Drive & OAuth 2.0
-    ├── COURS_COMPTE_DE_SERVICE.md    # Cours complet M2M, SDK vs API et sécurité Cloud
-    ├── ROADMAP.md                    # Feuille de route du projet
-    ├── JOURNAL_DE_BORD.md            # Historique des décisions et implémentations
-    └── GUIDE_TECHNIQUE_ET_LEXIQUE.md # Manuel technique détaillé
+│   └── js/app.js                # Contrôleur client asynchrone (FormData, Fetch API)
+└── .env.example                 # Modèle des variables d'environnement requises
 ```
 
-### Technologies employées
+### Technologies Utilisées
 
-| Composant | Technologie / Librairie | Rôle |
+| Composant | Technologie | Rôle |
 | :--- | :--- | :--- |
 | **Backend** | Node.js, Express 5 | Serveur HTTP et orchestration d'API |
 | **Ingestion fichiers** | Multer (`memoryStorage`) | Traitement sécurisé en mémoire vive |
-| **Moteur IA** | `@google/genai` (Gemini Flash) | Écoute audio, lecture documentaire et extraction JSON |
-| **Génération Word** | `docx` | Fabrication du compte-rendu stylisé en mémoire vive (RAM) |
+| **Intelligence Artificielle** | `@google/genai` (Gemini Flash) | Analyse audio, lecture documentaire et extraction JSON |
+| **Génération Bureautique** | `docx` | Fabrication du document Word officiel en RAM |
 | **Stockage Cloud** | `googleapis` (Drive v3) | Téléversement sécurisé, permissions et URL Google Docs |
-| **Extraction Word** | Mammoth | Conversion des fichiers `.docx` en texte brut pour analyse |
-| **Intégration Notion** | Axios, Notion REST API (`2022-06-28`) | Création des fiches dans la base cible |
-| **Interface** | EJS, Tailwind CSS, Lucide Icons | Rendu côté serveur et composants d'interaction |
+| **Extraction Word** | Mammoth | Conversion des fichiers `.docx` sources en texte brut |
+| **Persistance Notion** | Axios, Notion REST API (`2022-06-28`) | Création des fiches dans la base cible |
+| **Interface Utilisateur** | EJS, Tailwind CSS, Lucide Icons | Rendu dynamique et composants interactifs |
 
 ---
 
@@ -77,24 +88,20 @@ ReportFlow/
 
 * [Node.js](https://nodejs.org/) (version 18 ou supérieure recommandée)
 * Une clé d'API Google Gemini ([Google AI Studio](https://aistudio.google.com/))
-* Une intégration interne Notion avec accès à votre base de données ([Notion Developers](https://developers.notion.com/))
+* Une intégration interne Notion avec accès à une base de données ([Notion Developers](https://developers.notion.com/))
+* Un projet Google Cloud avec l'API Google Drive activée ([Google Cloud Console](https://console.cloud.google.com/))
 
-### 1. Clonage du dépôt
+### 1. Cloner le projet et installer les dépendances
 
 ```bash
 git clone https://github.com/votre-compte/reportflow.git
 cd reportflow
-```
-
-### 2. Installation des dépendances
-
-```bash
 npm install
 ```
 
-### 3. Configuration des variables d'environnement
+### 2. Configurer les variables d'environnement
 
-Copiez le modèle d'environnement et complétez vos identifiants :
+Copiez le fichier d'exemple et remplissez vos identifiants :
 
 ```bash
 cp .env.example .env
@@ -104,17 +111,38 @@ Contenu requis dans `.env` :
 
 ```env
 PORT=3000
+
+# Intelligence Artificielle (Google Gemini)
 GEMINI_API_KEY=votre_cle_api_gemini
-NOTION_TOKEN=votre_jeton_integration_notion
+
+# Base de données Notion
+NOTION_TOKEN=ntn_votre_token_notion
 DATABASE_ID=votre_identifiant_base_notion
+
+# Stockage Cloud Google Drive (OAuth 2.0)
+GOOGLE_DRIVE_FOLDER_ID=votre_identifiant_dossier_drive
+GOOGLE_CLIENT_ID=votre_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=votre_client_secret
 ```
 
 > [!NOTE]
-> Veillez à partager votre base de données Notion avec l'intégration créée dans les paramètres de la page Notion (menu `...` > `Connexions`).
+> Dans Notion, assurez-vous que votre base de données contient les colonnes suivantes :
+> `Client / Projet` (Titre), `Date` (Date), `Synthèse IA` (Texte enrichi), `Actions à mener` (Texte enrichi) et `Lien Document (Drive)` (URL).
+> N'oubliez pas d'associer votre intégration à la page via le menu `...` > `Connexions`.
 
-### 4. Lancement de l'application
+### 3. Autoriser l'accès à Google Drive (Une seule fois)
 
-En mode développement (avec rechargement à chaud via Nodemon) :
+Pour permettre le dépôt des documents sur votre Google Drive personnel en utilisant votre quota :
+
+```bash
+npm run auth:drive
+```
+
+Une page s'ouvre automatiquement dans votre navigateur pour valider la connexion. Le script enregistre automatiquement le jeton permanent `GOOGLE_REFRESH_TOKEN` dans votre fichier `.env`.
+
+### 4. Lancer le serveur
+
+En mode développement (avec rechargement automatique via Nodemon) :
 
 ```bash
 npm run dev
@@ -130,11 +158,12 @@ L'application est accessible à l'adresse suivante : `http://localhost:3000`.
 
 ---
 
-## Sécurité et Gestion des Données
+## Sécurité et Confidentialité
 
-* **Exclusion des identifiants** : Le fichier `.env` est exclu du suivi Git via `.gitignore`.
-* **Traitement en mémoire vive** : Pour les fichiers inférieurs à 20 Mo, aucun binaire n'est écrit sur le disque du serveur hôte.
-* **Cycle de vie des fichiers temporaires** : Lors du traitement des fichiers volumineux (≥ 20 Mo), les données temporaires locales (`os.tmpdir()`) et distantes (serveurs Google Files) sont supprimées systématiquement dans un bloc `finally`, garantissant la destruction des données même en cas d'erreur de traitement.
+* **Exclusion Git stricte** : Le fichier `.env`, les clés privées et les documents internes sont exclus du dépôt via `.gitignore`.
+* **Traitement en mémoire vive** : Pour les notes et les documents standards (< 20 Mo), aucune donnée n'est écrite sur le disque du serveur hôte.
+* **Cycle de vie éphémère** : Pour les fichiers volumineux (≥ 20 Mo), la suppression des fichiers temporaires locaux et distants est garantie dans un bloc `finally`.
+* **Principe du moindre privilège** : L'accès à Google Drive est strictement restreint au répertoire ciblé (`GOOGLE_DRIVE_FOLDER_ID`).
 
 ---
 
