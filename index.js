@@ -165,8 +165,10 @@ app.post('/api/generer-word', async (req, res) => {
       .replace(/\s+/g, '-')
       .substring(0, 40);
 
-    const dateAujourdhui = new Date().toISOString().split('T')[0];
-    const nomFichier = `Compte-rendu-${slugClient}-${dateAujourdhui}.docx`;
+    const dateFichier = (date && /^\d{4}-\d{2}-\d{2}$/.test(String(date).trim()))
+      ? String(date).trim()
+      : new Date().toISOString().split('T')[0];
+    const nomFichier = `Compte-rendu-${slugClient}-${dateFichier}.docx`;
 
     // En-têtes HTTP pour déclencher le téléchargement binaire dans le navigateur
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');

@@ -53,8 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
   }
 
-  // Exemple concret et parlant
-  const DEMO_TEXT = `Appel rapide avec la direction de Ravinala Airports cet après-midi.
+  // Exemple concret et parlant avec date de réunion explicite
+  const DEMO_TEXT = `Date de la réunion : 08/01/2026
+Client : Ravinala Airports
+
+Appel rapide avec la direction de Ravinala Airports ce matin.
 Ils veulent qu'on réalise une étude d'impact environnemental pour le terminal d'Ivato d'ici décembre.
 Le budget prévisionnel est validé mais il faut envoyer la proposition technique avant vendredi prochain et organiser un point avec l'équipe terrain mardi.`;
 

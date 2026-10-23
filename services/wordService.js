@@ -13,7 +13,9 @@ const {
   ShadingType,
   Header,
   Footer,
-  PageNumber
+  PageNumber,
+  TabStopType,
+  TabStopPosition
 } = require('docx');
 
 /**
@@ -21,13 +23,39 @@ const {
  * Couleurs hexadécimales standardisées (sans le préfixe '#' pour la librairie docx).
  */
 const PALETTE = {
-  BLUSH_PRINCIPAL: 'C97A7E',   // Rose blush raffiné (titres, puces, accentuations)
-  BLUSH_FONCE: '9C5559',       // Rose blush profond (en-tête de section)
+  BLUSH_PRINCIPAL: 'C97A7E',   // Rose blush raffiné (titres, accentuations)
+  BLUSH_FONCE: '9C5559',       // Rose blush profond (en-têtes de section et de tableau)
   PASTEL_FOND: 'FDF6F6',       // Rose pastel très doux (arrière-plan d'encadré)
   PASTEL_BORDURE: 'ECCECE',    // Bordure rose poudré subtile
   TEXTE_PRINCIPAL: '23272F',   // Gris ardoise foncé (lecture confortable)
   TEXTE_SECONDAIRE: '6B7280',  // Gris neutre moyen (métadonnées)
   BLANC: 'FFFFFF'
+};
+
+// Largeur utile d'une page A4 avec des marges de 2,54 cm (en DXA : 1440 = 1 pouce)
+const LARGEUR_PAGE = 9026;
+
+// Rubriques attendues dans la clé "synthese" (doivent correspondre au prompt)
+const RUBRIQUES = [
+  'Avancement',
+  'Décisions prises',
+  'Points en attente',
+  'Budget et délais',
+  'Risques',
+  'Opportunités'
+];
+
+const TRAIT_FIN = {
+  style: BorderStyle.SINGLE,
+  size: 4,
+  color: PALETTE.PASTEL_BORDURE
+};
+
+const BORDURES_FINES = {
+  top: TRAIT_FIN,
+  bottom: TRAIT_FIN,
+  left: TRAIT_FIN,
+  right: TRAIT_FIN
 };
 
 /**
@@ -45,12 +73,57 @@ function formaterDateFr(date = new Date()) {
 }
 
 /**
- * Nettoie une chaîne d'actions et la découpe en tableau de lignes distinctes.
+ * Convertit une chaîne YYYY-MM-DD en Date locale, sans décalage de fuseau horaire.
  *
- * @param {string} actionsTexte Texte brut des actions (séparé par des sauts de ligne ou puces).
- * @returns {string[]} Liste d'actions nettoyées.
+ * @param {string} texte Date au format YYYY-MM-DD.
+ * @returns {Date|null} Date valide, ou null si le format est incorrect.
  */
-function extraireListeActions(actionsTexte) {
+function lireDateIso(texte) {
+  if (!texte || !/^\d{4}-\d{2}-\d{2}$/.test(String(texte).trim())) {
+    return null;
+  }
+  const [annee, mois, jour] = String(texte).trim().split('-').map(Number);
+  const date = new Date(annee, mois - 1, jour);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * Découpe la synthèse en rubriques (Avancement, Décisions prises, etc.).
+ * Si le texte ne contient aucune rubrique reconnue, il est renvoyé tel quel.
+ *
+ * @param {string} texte Synthèse brute renvoyée par l'IA.
+ * @returns {{rubrique: (string|null), texte: string}[]} Liste de blocs.
+ */
+function extraireRubriques(texte) {
+  if (!texte || typeof texte !== 'string') {
+    return [];
+  }
+
+  const motif = new RegExp(`(?=(?:${RUBRIQUES.join('|')})\\s*:)`);
+
+  return texte
+    .split(motif)
+    .map(bloc => bloc.trim())
+    .filter(Boolean)
+    .map(bloc => {
+      const position = bloc.indexOf(':');
+      const rubrique = position === -1 ? '' : bloc.slice(0, position).trim();
+      if (!RUBRIQUES.includes(rubrique)) {
+        return { rubrique: null, texte: bloc };
+      }
+      return { rubrique, texte: bloc.slice(position + 1).trim() };
+    });
+}
+
+/**
+ * Découpe la chaîne d'actions en objets {action, responsable, echeance}.
+ * Format attendu par ligne : "- Action (Responsable : X, Échéance : Y)".
+ * Une ligne qui ne respecte pas ce format est conservée, avec "non précisé".
+ *
+ * @param {string} actionsTexte Texte brut des actions (une par ligne).
+ * @returns {{action: string, responsable: string, echeance: string}[]} Liste d'actions.
+ */
+function extraireActions(actionsTexte) {
   if (!actionsTexte || typeof actionsTexte !== 'string') {
     return [];
   }
@@ -58,8 +131,146 @@ function extraireListeActions(actionsTexte) {
   return actionsTexte
     .split('\n')
     .map(ligne => ligne.trim())
-    .filter(ligne => ligne.length > 0)
-    .map(ligne => ligne.replace(/^[-*•\d.]+\s*/, ''));
+    .filter(Boolean)
+    .map(ligne => ligne.replace(/^[-*•◆]\s*/, '').replace(/^\d+[.)]\s+/, '').trim())
+    .filter(Boolean)
+    .map(ligne => {
+      const trouve = ligne.match(
+        /^(.*?)\s*\(\s*Responsable\s*:\s*(.*?)\s*,\s*[eé]ch[eé]ance\s*:\s*(.*?)\s*\)\s*\.?$/i
+      );
+      if (!trouve) {
+        return { action: ligne, responsable: 'non précisé', echeance: 'non précisé' };
+      }
+      return {
+        action: trouve[1].trim(),
+        responsable: trouve[2].trim() || 'non précisé',
+        echeance: trouve[3].trim() || 'non précisé'
+      };
+    });
+}
+
+/**
+ * Crée une cellule de tableau avec texte, bordures fines et largeur DXA.
+ * Les mentions "non précisé" sont affichées en gris italique.
+ *
+ * @param {string} texte Contenu de la cellule.
+ * @param {Object} options Options de mise en forme.
+ * @param {number} options.largeur Largeur de la colonne en DXA.
+ * @param {boolean} [options.gras] Texte en gras.
+ * @param {string} [options.couleur] Couleur du texte.
+ * @param {string} [options.fond] Couleur de fond.
+ * @param {boolean} [options.italique] Texte en italique.
+ * @returns {TableCell} Cellule prête à être ajoutée à une ligne.
+ */
+function creerCellule(texte, options) {
+  const { largeur, gras = false, couleur = PALETTE.TEXTE_PRINCIPAL, fond = null, italique = false } = options;
+  const nonPrecise = /^non précis/i.test(texte);
+
+  return new TableCell({
+    width: { size: largeur, type: WidthType.DXA },
+    borders: BORDURES_FINES,
+    shading: fond ? { type: ShadingType.CLEAR, fill: fond, color: 'auto' } : undefined,
+    margins: { top: 80, bottom: 80, left: 120, right: 120 },
+    children: [
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: texte,
+            font: 'Arial',
+            size: 20,
+            bold: gras,
+            italics: italique || nonPrecise,
+            color: nonPrecise ? PALETTE.TEXTE_SECONDAIRE : couleur
+          })
+        ]
+      })
+    ]
+  });
+}
+
+/**
+ * Crée une ligne de la fiche d'identité (libellé à gauche, valeur à droite).
+ *
+ * @param {string} libelle Intitulé de la ligne.
+ * @param {string} valeur Valeur affichée.
+ * @param {Object} [options] Mise en forme de la valeur.
+ * @param {boolean} [options.accent] Valeur en gras, couleur blush.
+ * @param {boolean} [options.discret] Valeur en gris italique (information manquante).
+ * @returns {TableRow} Ligne du tableau.
+ */
+function creerLigneMeta(libelle, valeur, options = {}) {
+  const { accent = false, discret = false } = options;
+  const largeurLibelle = 2600;
+  const largeurValeur = LARGEUR_PAGE - largeurLibelle;
+
+  return new TableRow({
+    children: [
+      new TableCell({
+        width: { size: largeurLibelle, type: WidthType.DXA },
+        borders: BORDURES_FINES,
+        shading: { type: ShadingType.CLEAR, fill: PALETTE.PASTEL_FOND, color: 'auto' },
+        margins: { top: 80, bottom: 80, left: 120, right: 120 },
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: libelle,
+                font: 'Arial',
+                size: 20,
+                color: PALETTE.TEXTE_SECONDAIRE
+              })
+            ]
+          })
+        ]
+      }),
+      new TableCell({
+        width: { size: largeurValeur, type: WidthType.DXA },
+        borders: BORDURES_FINES,
+        margins: { top: 80, bottom: 80, left: 120, right: 120 },
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: valeur,
+                font: 'Arial',
+                size: 21,
+                bold: accent,
+                italics: discret,
+                color: accent
+                  ? PALETTE.BLUSH_PRINCIPAL
+                  : discret
+                    ? PALETTE.TEXTE_SECONDAIRE
+                    : PALETTE.TEXTE_PRINCIPAL
+              })
+            ]
+          })
+        ]
+      })
+    ]
+  });
+}
+
+/**
+ * Crée un titre de section (1. Synthèse exécutive, 2. Plan d'action).
+ *
+ * @param {string} texte Titre de la section.
+ * @param {number} avant Espacement avant le titre (en twips).
+ * @returns {Paragraph} Paragraphe de titre.
+ */
+function creerTitreSection(texte, avant) {
+  return new Paragraph({
+    heading: HeadingLevel.HEADING_2,
+    spacing: { before: avant, after: 160 },
+    children: [
+      new TextRun({
+        text: texte,
+        font: 'Arial',
+        size: 26,
+        bold: true,
+        color: PALETTE.BLUSH_FONCE
+      })
+    ]
+  });
 }
 
 /**
@@ -68,135 +279,92 @@ function extraireListeActions(actionsTexte) {
  *
  * @param {Object} donnees Données issues de l'analyse IA.
  * @param {string} [donnees.client] Nom du client ou intitulé du projet.
- * @param {string} [donnees.synthese] Résumé exécutif en quelques phrases.
- * @param {string} [donnees.actions] Liste des actions opérationnelles à mener.
+ * @param {string} [donnees.date] Date de la réunion au format YYYY-MM-DD, ou null.
+ * @param {string} [donnees.synthese] Synthèse structurée par rubriques.
+ * @param {string} [donnees.actions] Une action par ligne, avec responsable et échéance.
  * @param {Object} [options] Métadonnées optionnelles.
- * @param {string} [options.titreDocument] Titre personnalisé du document.
  * @param {string} [options.auteur] Nom du rédacteur ou de l'application.
- * @returns {Promise<Buffer>} Buffer binaire du fichier Word (.docx) prêt à être transmis ou sauvegardé.
+ * @returns {Promise<Buffer>} Buffer binaire du fichier Word (.docx).
  */
 async function genererDocumentWord(donnees = {}, options = {}) {
   const nomClient = (donnees.client || 'Client non spécifié').trim();
-  const texteSynthese = (donnees.synthese || 'Aucune synthèse disponible pour cette séance.').trim();
-  const listeActions = extraireListeActions(donnees.actions);
-  const dateEmission = donnees.date && /^\d{4}-\d{2}-\d{2}$/.test(String(donnees.date).trim())
-    ? formaterDateFr(new Date(donnees.date))
-    : formaterDateFr();
+  const rubriques = extraireRubriques(donnees.synthese);
+  const actions = extraireActions(donnees.actions);
 
-  // 1. En-tête du document Word (discret et professionnel sur chaque page)
+  // Deux dates distinctes : la réunion (jamais remplacée par la date du jour) et la rédaction
+  const dateReunionBrute = lireDateIso(donnees.date);
+  const dateReunion = dateReunionBrute ? formaterDateFr(dateReunionBrute) : 'Non précisée';
+  const dateRedaction = formaterDateFr();
+
+  // 1. En-tête de page (discret et professionnel sur chaque page)
   const headerPage = new Header({
     children: [
       new Paragraph({
         alignment: AlignmentType.RIGHT,
+        spacing: { after: 120 },
         children: [
           new TextRun({
             text: 'REPORTFLOW',
             font: 'Arial',
-            size: 16, // 8pt
+            size: 16,
             bold: true,
             color: PALETTE.BLUSH_PRINCIPAL
           }),
           new TextRun({
-            text: `  |  Compte-rendu de réunion — ${dateEmission}`,
+            text: `  |  Compte-rendu de réunion, ${nomClient}`,
             font: 'Arial',
             size: 16,
             color: PALETTE.TEXTE_SECONDAIRE
           })
-        ],
-        spacing: { after: 120 }
+        ]
       })
     ]
   });
 
-  // 2. Pied de page institutionnel avec numérotation automatique
+  // 2. Pied de page : mention à gauche, numérotation alignée à droite grâce à une tabulation
   const footerPage = new Footer({
     children: [
       new Paragraph({
-        alignment: AlignmentType.JUSTIFIED,
+        tabStops: [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }],
         children: [
           new TextRun({
-            text: 'Document confidentiel à usage interne. Généré automatiquement par ReportFlow.',
+            text: 'Généré automatiquement par ReportFlow. À relire avant diffusion.',
             font: 'Arial',
             size: 16,
             italics: true,
             color: PALETTE.TEXTE_SECONDAIRE
           }),
-          new TextRun({
-            text: '\tPage '
-          }),
-          new TextRun({
-            children: [PageNumber.CURRENT]
-          }),
-          new TextRun({
-            text: ' sur '
-          }),
-          new TextRun({
-            children: [PageNumber.TOTAL_PAGES]
-          })
+          new TextRun({ text: '\tPage ', font: 'Arial', size: 16, color: PALETTE.TEXTE_SECONDAIRE }),
+          new TextRun({ children: [PageNumber.CURRENT], font: 'Arial', size: 16, color: PALETTE.TEXTE_SECONDAIRE }),
+          new TextRun({ text: ' sur ', font: 'Arial', size: 16, color: PALETTE.TEXTE_SECONDAIRE }),
+          new TextRun({ children: [PageNumber.TOTAL_PAGES], font: 'Arial', size: 16, color: PALETTE.TEXTE_SECONDAIRE })
         ]
       })
     ]
   });
 
-  // 3. Encadré de synthèse exécutive (Tableau à cellule unique avec fond Rose Pastel)
-  const tableauSynthese = new Table({
-    width: {
-      size: 100,
-      type: WidthType.PERCENTAGE
-    },
-    borders: {
-      top: { style: BorderStyle.NONE },
-      bottom: { style: BorderStyle.NONE },
-      right: { style: BorderStyle.NONE },
-      left: {
-        style: BorderStyle.SINGLE,
-        size: 24, // 3pt de bordure blush
-        color: PALETTE.BLUSH_PRINCIPAL
-      }
-    },
+  // 3. Fiche d'identité de la réunion
+  const tableauMeta = new Table({
+    width: { size: LARGEUR_PAGE, type: WidthType.DXA },
+    columnWidths: [2600, LARGEUR_PAGE - 2600],
     rows: [
-      new TableRow({
-        children: [
-          new TableCell({
-            shading: {
-              type: ShadingType.CLEAR,
-              fill: PALETTE.PASTEL_FOND
-            },
-            margins: {
-              top: 200,
-              bottom: 200,
-              left: 260,
-              right: 200
-            },
-            children: [
-              new Paragraph({
-                spacing: { line: 320 },
-                children: [
-                  new TextRun({
-                    text: texteSynthese,
-                    font: 'Arial',
-                    size: 22, // 11pt
-                    color: PALETTE.TEXTE_PRINCIPAL
-                  })
-                ]
-              })
-            ]
-          })
-        ]
-      })
+      creerLigneMeta('Client / Projet', nomClient, { accent: true }),
+      creerLigneMeta('Date de la réunion', dateReunion, { discret: !dateReunionBrute }),
+      creerLigneMeta('Date de rédaction', dateRedaction),
+      creerLigneMeta('Statut', 'Brouillon, à valider')
     ]
   });
 
-  // 4. Construction des paragraphes du plan d'action
-  const paragraphesActions = [];
-  if (listeActions.length === 0) {
-    paragraphesActions.push(
+  // 4. Synthèse : un paragraphe par rubrique, nom de la rubrique en gras
+  const paragraphesSynthese = [];
+  if (rubriques.length === 0) {
+    paragraphesSynthese.push(
       new Paragraph({
         children: [
           new TextRun({
-            text: 'Aucune action immédiate identifiée lors de cette séance.',
+            text: 'Aucune synthèse disponible pour cette séance.',
             font: 'Arial',
-            size: 20,
+            size: 21,
             italics: true,
             color: PALETTE.TEXTE_SECONDAIRE
           })
@@ -204,30 +372,119 @@ async function genererDocumentWord(donnees = {}, options = {}) {
       })
     );
   } else {
-    listeActions.forEach((action) => {
-      paragraphesActions.push(
+    rubriques.forEach(({ rubrique, texte }, index) => {
+      const enfants = [];
+      if (rubrique) {
+        enfants.push(
+          new TextRun({
+            text: `${rubrique} : `,
+            font: 'Arial',
+            size: 21,
+            bold: true,
+            color: PALETTE.BLUSH_FONCE
+          })
+        );
+      }
+      enfants.push(
+        new TextRun({
+          text: texte,
+          font: 'Arial',
+          size: 21,
+          color: PALETTE.TEXTE_PRINCIPAL
+        })
+      );
+      paragraphesSynthese.push(
         new Paragraph({
-          spacing: { before: 100, after: 100 },
-          children: [
-            new TextRun({
-              text: '◆  ',
-              font: 'Arial',
-              size: 16,
-              color: PALETTE.BLUSH_PRINCIPAL
-            }),
-            new TextRun({
-              text: action,
-              font: 'Arial',
-              size: 21, // ~10.5pt
-              color: PALETTE.TEXTE_PRINCIPAL
-            })
-          ]
+          spacing: { line: 300, after: index === rubriques.length - 1 ? 0 : 140 },
+          children: enfants
         })
       );
     });
   }
 
-  // 5. Assemblage complet du document
+  const tableauSynthese = new Table({
+    width: { size: LARGEUR_PAGE, type: WidthType.DXA },
+    columnWidths: [LARGEUR_PAGE],
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: LARGEUR_PAGE, type: WidthType.DXA },
+            borders: {
+              top: { style: BorderStyle.NONE, size: 0, color: PALETTE.BLANC },
+              bottom: { style: BorderStyle.NONE, size: 0, color: PALETTE.BLANC },
+              right: { style: BorderStyle.NONE, size: 0, color: PALETTE.BLANC },
+              left: { style: BorderStyle.SINGLE, size: 24, color: PALETTE.BLUSH_PRINCIPAL }
+            },
+            shading: { type: ShadingType.CLEAR, fill: PALETTE.PASTEL_FOND, color: 'auto' },
+            margins: { top: 200, bottom: 200, left: 260, right: 200 },
+            children: paragraphesSynthese
+          })
+        ]
+      })
+    ]
+  });
+
+  // 5. Plan d'action : tableau Action / Responsable / Échéance
+  const largeurs = [5000, 2200, LARGEUR_PAGE - 7200];
+
+  let blocActions;
+  if (actions.length === 0) {
+    blocActions = new Paragraph({
+      children: [
+        new TextRun({
+          text: 'Aucune action immédiate identifiée lors de cette séance.',
+          font: 'Arial',
+          size: 20,
+          italics: true,
+          color: PALETTE.TEXTE_SECONDAIRE
+        })
+      ]
+    });
+  } else {
+    const enteteStyle = { gras: true, couleur: PALETTE.BLANC, fond: PALETTE.BLUSH_FONCE };
+    blocActions = new Table({
+      width: { size: LARGEUR_PAGE, type: WidthType.DXA },
+      columnWidths: largeurs,
+      rows: [
+        new TableRow({
+          tableHeader: true,
+          cantSplit: true,
+          children: [
+            creerCellule('Action', { largeur: largeurs[0], ...enteteStyle }),
+            creerCellule('Responsable', { largeur: largeurs[1], ...enteteStyle }),
+            creerCellule('Échéance', { largeur: largeurs[2], ...enteteStyle })
+          ]
+        }),
+        ...actions.map(
+          ({ action, responsable, echeance }) =>
+            new TableRow({
+              cantSplit: true,
+              children: [
+                creerCellule(action, { largeur: largeurs[0] }),
+                creerCellule(responsable, { largeur: largeurs[1] }),
+                creerCellule(echeance, { largeur: largeurs[2] })
+              ]
+            })
+        )
+      ]
+    });
+  }
+
+  const notePlanAction = new Paragraph({
+    spacing: { before: 120 },
+    children: [
+      new TextRun({
+        text: 'Les mentions « non précisé » sont à compléter lors de la validation du compte-rendu.',
+        font: 'Arial',
+        size: 16,
+        italics: true,
+        color: PALETTE.TEXTE_SECONDAIRE
+      })
+    ]
+  });
+
+  // 6. Assemblage complet du document
   const doc = new Document({
     creator: options.auteur || 'ReportFlow',
     title: `Compte-rendu - ${nomClient}`,
@@ -237,7 +494,7 @@ async function genererDocumentWord(donnees = {}, options = {}) {
         properties: {
           page: {
             margin: {
-              top: 1440,    // 2.54 cm
+              top: 1440,
               bottom: 1440,
               left: 1440,
               right: 1440
@@ -247,7 +504,6 @@ async function genererDocumentWord(donnees = {}, options = {}) {
         headers: { default: headerPage },
         footers: { default: footerPage },
         children: [
-          // Titre principal
           new Paragraph({
             heading: HeadingLevel.HEADING_1,
             spacing: { before: 200, after: 120 },
@@ -255,19 +511,17 @@ async function genererDocumentWord(donnees = {}, options = {}) {
               new TextRun({
                 text: 'Compte-Rendu de Réunion',
                 font: 'Arial',
-                size: 38, // 19pt
+                size: 38,
                 bold: true,
                 color: PALETTE.BLUSH_FONCE
               })
             ]
           }),
-
-          // Sous-titre institutionnel
           new Paragraph({
-            spacing: { after: 360 },
+            spacing: { after: 280 },
             children: [
               new TextRun({
-                text: 'Synthèse exécutive & Plan d\'action opérationnel',
+                text: "Synthèse exécutive & Plan d'action opérationnel",
                 font: 'Arial',
                 size: 22,
                 color: PALETTE.TEXTE_SECONDAIRE
@@ -275,93 +529,20 @@ async function genererDocumentWord(donnees = {}, options = {}) {
             ]
           }),
 
-          // Bloc Métadonnées (Fiche d'identité)
-          new Paragraph({
-            spacing: { before: 120, after: 80 },
-            children: [
-              new TextRun({
-                text: 'Client / Projet : ',
-                font: 'Arial',
-                size: 22,
-                bold: true,
-                color: PALETTE.TEXTE_PRINCIPAL
-              }),
-              new TextRun({
-                text: nomClient,
-                font: 'Arial',
-                size: 22,
-                bold: true,
-                color: PALETTE.BLUSH_PRINCIPAL
-              })
-            ]
-          }),
-          new Paragraph({
-            spacing: { after: 360 },
-            children: [
-              new TextRun({
-                text: 'Date de la session : ',
-                font: 'Arial',
-                size: 20,
-                color: PALETTE.TEXTE_SECONDAIRE
-              }),
-              new TextRun({
-                text: dateEmission,
-                font: 'Arial',
-                size: 20,
-                color: PALETTE.TEXTE_PRINCIPAL
-              })
-            ]
-          }),
+          tableauMeta,
 
-          // Ligne de séparation élégante
-          new Paragraph({
-            spacing: { after: 360 },
-            border: {
-              bottom: {
-                style: BorderStyle.SINGLE,
-                size: 6, // 0.75pt
-                color: PALETTE.PASTEL_BORDURE
-              }
-            }
-          }),
-
-          // Section 1 : Synthèse Exécutive
-          new Paragraph({
-            heading: HeadingLevel.HEADING_2,
-            spacing: { before: 240, after: 160 },
-            children: [
-              new TextRun({
-                text: '1. Synthèse Exécutive',
-                font: 'Arial',
-                size: 26, // 13pt
-                bold: true,
-                color: PALETTE.BLUSH_FONCE
-              })
-            ]
-          }),
+          creerTitreSection('1. Synthèse exécutive', 400),
           tableauSynthese,
 
-          // Section 2 : Plan d'action
-          new Paragraph({
-            heading: HeadingLevel.HEADING_2,
-            spacing: { before: 400, after: 160 },
-            children: [
-              new TextRun({
-                text: '2. Plan d\'Action Opérationnel',
-                font: 'Arial',
-                size: 26,
-                bold: true,
-                color: PALETTE.BLUSH_FONCE
-              })
-            ]
-          }),
-          ...paragraphesActions
+          creerTitreSection("2. Plan d'action opérationnel", 400),
+          blocActions,
+          ...(actions.length > 0 ? [notePlanAction] : [])
         ]
       }
     ]
   });
 
-  // 6. Sérialisation en mémoire vive (RAM) sous forme de Buffer
+  // 7. Sérialisation en mémoire vive sous forme de Buffer
   return await Packer.toBuffer(doc);
 }
 

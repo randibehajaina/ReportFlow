@@ -17,6 +17,55 @@ const notionClient = axios.create({
   timeout: 10000
 });
 
+// Cache en mémoire du nom de la colonne Notion stockant l'URL Drive
+let cachedDrivePropertyName = null;
+
+/**
+ * Résout dynamiquement le nom exact de la colonne URL dans la base Notion
+ * (gère 'Document soucre (Drive)', 'Document source (Drive)', 'Lien Document (Drive)', etc.).
+ *
+ * @param {string} databaseId Identifiant de la base Notion.
+ * @returns {Promise<string|null>} Nom exact de la propriété ou fallback.
+ */
+async function resolveDriveProperty(databaseId) {
+  if (cachedDrivePropertyName) return cachedDrivePropertyName;
+
+  try {
+    const dbRes = await notionClient.get(`/databases/${databaseId}`);
+    const props = dbRes.data?.properties || {};
+
+    // 1. Recherche par correspondance exacte parmi les noms connus (y compris coquilles)
+    const knownCandidates = [
+      'Document soucre (Drive)',
+      'Document source (Drive)',
+      'Lien Document (Drive)',
+      'Document Drive',
+      'Lien Drive'
+    ];
+
+    const exactMatch = knownCandidates.find(name => props[name] && props[name].type === 'url');
+    if (exactMatch) {
+      cachedDrivePropertyName = exactMatch;
+      return exactMatch;
+    }
+
+    // 2. Recherche heuristique : toute propriété de type 'url' dont l'intitulé évoque Drive / Document
+    const heuristicMatch = Object.keys(props).find(key => {
+      return props[key]?.type === 'url' && /drive|document|source|soucre|lien/i.test(key);
+    });
+
+    if (heuristicMatch) {
+      cachedDrivePropertyName = heuristicMatch;
+      return heuristicMatch;
+    }
+  } catch (err) {
+    console.warn('[NotionService] Impossible de vérifier le schéma de la base Notion :', err.message);
+  }
+
+  // Fallback par défaut sur le nom actuellement présent dans Notion
+  return 'Document soucre (Drive)';
+}
+
 /**
  * Insère une nouvelle ligne dans la base de données Notion avec les données du compte-rendu.
  *
@@ -24,6 +73,7 @@ const notionClient = axios.create({
  * @param {string} data.client Nom du client ou intitulé du projet.
  * @param {string} data.synthese Synthèse exécutive rédigée.
  * @param {string} data.actions Actions à entreprendre.
+ * @param {string} [data.lienDrive] Lien web vers le document Google Drive.
  * @returns {Promise<string>} Identifiant unique de la page Notion créée.
  */
 async function insererCompteRendu({ client, date, synthese, actions, lienDrive }) {
@@ -55,22 +105,26 @@ async function insererCompteRendu({ client, date, synthese, actions, lienDrive }
     }
   };
 
-  // Ajout du lien Google Drive si disponible
+  // Ajout dynamique du lien Google Drive si disponible
+  let resolvedDriveCol = null;
   if (lienDrive) {
-    payload.properties['Lien Document (Drive)'] = {
-      url: lienDrive
-    };
+    resolvedDriveCol = await resolveDriveProperty(databaseId);
+    if (resolvedDriveCol) {
+      payload.properties[resolvedDriveCol] = {
+        url: lienDrive
+      };
+    }
   }
 
   try {
     const response = await notionClient.post('/pages', payload);
     return response.data.id;
   } catch (err) {
-    // Si la colonne 'Lien Document (Drive)' n'a pas encore été créée dans Notion par l'utilisateur,
-    // on retente automatiquement sans cette propriété pour ne jamais bloquer la création de la fiche.
-    if (lienDrive && err.response?.data?.message?.includes('Lien Document (Drive) is not a property that exists')) {
-      console.warn('[NotionService] Colonne "Lien Document (Drive)" non trouvée dans Notion. Enregistrement sans cette colonne...');
-      delete payload.properties['Lien Document (Drive)'];
+    // Si la colonne n'existe plus ou a été modifiée dans Notion, on invalide le cache et retente sans bloquer
+    if (resolvedDriveCol && err.response?.data?.message?.includes('is not a property that exists')) {
+      console.warn(`[NotionService] Colonne "${resolvedDriveCol}" non reconnue dans Notion. Enregistrement sans cette colonne...`);
+      cachedDrivePropertyName = null;
+      delete payload.properties[resolvedDriveCol];
       const retryResponse = await notionClient.post('/pages', payload);
       return retryResponse.data.id;
     }

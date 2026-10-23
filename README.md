@@ -39,7 +39,7 @@ flowchart LR
 
 ### Double Synchronisation Cloud : Google Drive & Notion
 * **Google Drive & Google Docs** : Téléversement du fichier via flux continu (`stream.PassThrough`), attribution des droits collaboratifs (`role: writer`) et génération automatique d'un lien d'édition directe (`webViewLink`).
-* **Base de données Notion** : Insertion normalisée des métadonnées (`Client / Projet`, `Date`, `Synthèse IA`, `Actions à mener` et `Lien Document (Drive)`).
+* **Base de données Notion** : Insertion normalisée des métadonnées (`Client / Projet`, `Date`, `Synthèse IA`, `Actions à mener` et `Document source (Drive)`).
 
 ### Interface Utilisateur Sobre & Réactive
 * **Hub d'état Cloud** : Badges d'état connectés pour Google Drive et Notion avec liens directs vers votre dossier et votre base de données.
@@ -127,7 +127,7 @@ GOOGLE_CLIENT_SECRET=votre_client_secret
 
 > [!NOTE]
 > Dans Notion, assurez-vous que votre base de données contient les colonnes suivantes :
-> `Client / Projet` (Titre), `Date` (Date), `Synthèse IA` (Texte enrichi), `Actions à mener` (Texte enrichi) et `Lien Document (Drive)` (URL).
+> `Client / Projet` (Titre), `Date` (Date), `Synthèse IA` (Texte enrichi), `Actions à mener` (Texte enrichi) et `Document source (Drive)` (URL).
 > N'oubliez pas d'associer votre intégration à la page via le menu `...` > `Connexions`.
 
 ### 3. Autoriser l'accès à Google Drive (Une seule fois)
