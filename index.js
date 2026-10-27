@@ -222,6 +222,11 @@ app.post('/api/generer-word', async (req, res) => {
   }
 });
 
+// Route de health check : permet à UptimeRobot d'envoyer un ping régulier
+// afin d'empêcher Render de mettre le service en veille.
+app.get('/health', (req, res) => res.status(200).send('ok'));
+
+
 app.listen(PORT, () => {
   console.log(`[Server] ReportFlow actif sur http://localhost:${PORT}`);
 });
