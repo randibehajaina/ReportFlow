@@ -11,18 +11,17 @@ const REDIRECT_URI = `http://localhost:${PORT}/oauth2callback`;
 
 async function main() {
   console.log('\n=============================================================');
-  console.log('   REPORTFLOW — CONNEXION AUTOMATIQUE À GOOGLE DRIVE (OAuth)  ');
+  console.log('   REPORTFLOW — Configuration OAuth 2.0 (Google Drive)');
   console.log('=============================================================\n');
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret || clientId.includes('votre_') || clientSecret.includes('votre_')) {
-    console.error('ERREUR : GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_SECRET manquant dans votre fichier .env\n');
-    console.log('Veuillez ajouter ces deux lignes dans votre fichier .env :');
-    console.log('GOOGLE_CLIENT_ID="votre_id_client"');
-    console.log('GOOGLE_CLIENT_SECRET="votre_code_secret"\n');
-    console.log('Puis relancez cette commande : node scripts/connecter-drive.js\n');
+    console.error('Erreur : GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_SECRET non définis dans .env\n');
+    console.log('Renseigner les variables suivantes dans le fichier .env :');
+    console.log('GOOGLE_CLIENT_ID="<client_id>"');
+    console.log('GOOGLE_CLIENT_SECRET="<client_secret>"\n');
     process.exit(1);
   }
 
@@ -32,19 +31,19 @@ async function main() {
     REDIRECT_URI
   );
 
-  // Scopes nécessaires : gestion des fichiers créés par l'app dans Drive
+  // Périmètre des autorisations requises (Google Drive)
   const scopes = [
     'https://www.googleapis.com/auth/drive.file',
     'https://www.googleapis.com/auth/drive'
   ];
 
   const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline', // Indispensable pour recevoir le Refresh Token permanent
-    prompt: 'consent',     // Force Google à renvoyer le refresh_token
+    access_type: 'offline', // Obtention du refresh token
+    prompt: 'consent',     // Forcer l'envoi du refresh_token
     scope: scopes
   });
 
-  // Serveur HTTP temporaire pour intercepter la réponse de Google après connexion
+  // Serveur HTTP temporaire d'écoute du callback OAuth
   const server = http.createServer(async (req, res) => {
     try {
       const parsedUrl = url.parse(req.url, true);
@@ -54,20 +53,20 @@ async function main() {
 
         if (!code) {
           res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
-          res.end('<h3>Erreur : Aucun code d\'autorisation reçu de Google.</h3>');
+          res.end('<h3>Erreur : Aucun code d\'autorisation reçu.</h3>');
           return;
         }
 
-        console.log('\nCode d\'autorisation reçu de Google ! Échange en cours...');
+        console.log('\nCode d\'autorisation reçu. Échange du jeton en cours...');
         const { tokens } = await oauth2Client.getToken(code);
 
         if (!tokens.refresh_token) {
-          console.warn('\nAttention : Google n\'a pas renvoyé de refresh_token (compte déjà lié).');
+          console.warn('\nNote : Aucun refresh_token retourné (autorisation déjà existante).');
         }
 
         const refreshToken = tokens.refresh_token;
 
-        // Sauvegarde automatique dans le fichier .env
+        // Persistance du refresh token dans le fichier .env
         const envPath = path.join(__dirname, '..', '.env');
         let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : '';
 
@@ -78,21 +77,19 @@ async function main() {
             envContent += `\nGOOGLE_REFRESH_TOKEN="${refreshToken}"\n`;
           }
           fs.writeFileSync(envPath, envContent, 'utf8');
-          console.log('GOOGLE_REFRESH_TOKEN enregistré avec succès dans votre fichier .env !');
+          console.log('GOOGLE_REFRESH_TOKEN enregistré dans le fichier .env.');
         }
 
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(`
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; padding: 50px;">
-            <h1 style="color: #10B981;">Connexion Google Drive réussie !</h1>
-            <p style="font-size: 18px; color: #374151;">Votre compte Google personnel est maintenant lié à ReportFlow.</p>
-            <p style="color: #6B7280;">Le token a été enregistré dans votre fichier <code>.env</code>.</p>
-            <p style="margin-top: 30px;"><b>Vous pouvez fermer cet onglet et revenir à votre terminal.</b></p>
+            <h1 style="color: #10B981;">Authentification Google Drive validée</h1>
+            <p style="font-size: 18px; color: #374151;">Le jeton d'accès a été configuré avec succès.</p>
+            <p style="color: #6B7280;">Vous pouvez fermer cette fenêtre.</p>
           </div>
         `);
 
-        console.log('\nSUCCÈS : Configuration terminée ! Vous pouvez maintenant utiliser ReportFlow.');
-        console.log('Vos documents Word seront téléversés directement sur votre Google Drive.\n');
+        console.log('\nConfiguration OAuth 2.0 validée avec succès.\n');
 
         setTimeout(() => {
           server.close();
@@ -100,7 +97,7 @@ async function main() {
         }, 1500);
       }
     } catch (err) {
-      console.error('\nErreur lors de la récupération des tokens :', err.message);
+      console.error('\nErreur lors de l\'échange de jeton :', err.message);
       res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(`<h3>Erreur : ${err.message}</h3>`);
       server.close();
@@ -109,18 +106,18 @@ async function main() {
   });
 
   server.listen(PORT, () => {
-    console.log(`Serveur d'autorisation temporaire actif sur le port ${PORT}...`);
-    console.log('\nCliquez sur ce lien pour autoriser ReportFlow dans votre navigateur :\n');
+    console.log(`Serveur d'autorisation actif sur le port ${PORT}...`);
+    console.log('\nURL d\'autorisation :\n');
     console.log(`\x1b[36m${authUrl}\x1b[0m\n`);
 
-    // Ouvre automatiquement la page dans le navigateur par défaut sous Windows via PowerShell
+    // Ouverture automatique du navigateur hôte
     const command = process.platform === 'win32'
       ? `powershell -Command "Start-Process '${authUrl}'"`
       : process.platform === 'darwin' ? `open "${authUrl}"` : `xdg-open "${authUrl}"`;
 
     exec(command, (err) => {
       if (err) {
-        console.log('(Si la page ne s\'ouvre pas toute seule, copiez-collez le lien ci-dessus dans votre navigateur)');
+        console.log('(Ouverture manuelle : veuillez copier l\'URL ci-dessus dans un navigateur)');
       }
     });
   });

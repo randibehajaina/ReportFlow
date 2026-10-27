@@ -26,13 +26,13 @@ function trouverFichierCle() {
 }
 
 /**
- * Initialise le client authentifié Google Drive v3 via Compte de Service.
+ * Initialise le client authentifié Google Drive v3 (support OAuth 2.0 ou Service Account).
  *
- * @returns {import('googleapis').drive_v3.Drive | null} Instance Google Drive API authentifiée ou null si non configuré.
+ * @returns {{ drive: import('googleapis').drive_v3.Drive, mode: string } | null} Instance Google Drive API authentifiée ou null si non configuré.
  */
 function initialiserGoogleDrive() {
   try {
-    // Cas 1 : OAuth 2.0 (Recommandé pour compte personnel Google @gmail.com avec quota personnel)
+    // Cas 1 : Authentification OAuth 2.0 (avec Refresh Token)
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
@@ -47,7 +47,7 @@ function initialiserGoogleDrive() {
       return { drive: google.drive({ version: 'v3', auth: oauth2Client }), mode: 'oauth2' };
     }
 
-    // Cas 2 : Fichier JSON Compte de Service (Google Workspace / Shared Drives)
+    // Cas 2 : Fichier de clé de compte de service (Google Cloud)
     const cheminCle = trouverFichierCle();
     if (cheminCle && fs.existsSync(cheminCle)) {
       const auth = new google.auth.GoogleAuth({
@@ -58,7 +58,7 @@ function initialiserGoogleDrive() {
       return { drive: google.drive({ version: 'v3', auth }), mode: 'service_account' };
     }
 
-    // Cas 3 : Variables d'environnement directes (.env)
+    // Cas 3 : Identifiants de compte de service via variables d'environnement
     const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
     const privateKeyRaw = process.env.GOOGLE_PRIVATE_KEY;
 
@@ -81,8 +81,7 @@ function initialiserGoogleDrive() {
 }
 
 /**
- * Téléverse un document Word (.docx) sous forme de Buffer en mémoire vive
- * vers Google Drive et récupère son URL d'ouverture et d'édition dans Google Docs.
+ * Téléverse un document Word (.docx) vers Google Drive et configure les droits d'accès.
  *
  * @param {Object} params
  * @param {string} params.nomFichier Nom du fichier avec extension .docx (ex : Compte-rendu-Client-Date.docx)
@@ -94,9 +93,9 @@ async function televerserDocumentWord({ nomFichier, buffer, dossierId }) {
   const configDrive = initialiserGoogleDrive();
   const folderIdCible = dossierId || process.env.GOOGLE_DRIVE_FOLDER_ID || null;
 
-  // Mode Démo / Fallback gracieux si aucune clé Google Drive n'est encore configurée
+  // Simulation hors-connexion lorsque les identifiants Drive ne sont pas configurés
   if (!configDrive) {
-    console.log('[GoogleDriveService] Mode Démo / Simulation actif : aucun identifiant Google Drive configuré.');
+    console.log('[GoogleDriveService] Mode simulation actif : aucun identifiant Google Drive configuré.');
     const fauxId = `drive-mock-${Date.now()}`;
     return {
       succes: true,
@@ -110,7 +109,7 @@ async function televerserDocumentWord({ nomFichier, buffer, dossierId }) {
   const drive = configDrive.drive;
 
   try {
-    // 1. Conversion du Buffer mémoire en Stream lisible (RAM pure, sans écriture disque)
+    // 1. Conversion du tampon binaire en flux de lecture
     const bufferStream = new stream.PassThrough();
     bufferStream.end(buffer);
 
@@ -137,27 +136,27 @@ async function televerserDocumentWord({ nomFichier, buffer, dossierId }) {
     const fileId = uploadRes.data.id;
     const webViewLinkInitial = uploadRes.data.webViewLink;
 
-    // 4. Configuration des permissions de partage pour ouverture dans Google Docs
+    // 4. Définition des permissions d'accès au document
     try {
       await drive.permissions.create({
         fileId: fileId,
         requestBody: {
-          role: 'writer', // Permet l'édition collaborative
-          type: 'anyone'  // Accessible via le lien de partage généré
+          role: 'writer', // Autorisation d'édition
+          type: 'anyone'
         }
       });
     } catch (permErr) {
-      console.warn('[GoogleDriveService] Avertissement permissions de partage :', permErr.message);
+      console.warn('[GoogleDriveService] Note permissions de partage :', permErr.message);
     }
 
-    // 5. Récupération du lien d'édition final
+    // 5. Récupération du lien de consultation web
     const getRes = await drive.files.get({
       fileId: fileId,
       fields: 'id, name, webViewLink'
     });
 
     const lienFinal = getRes.data.webViewLink || webViewLinkInitial;
-    console.log(`[GoogleDriveService] Document téléversé avec succès ! Lien : ${lienFinal}`);
+    console.log(`[GoogleDriveService] Document téléversé : ${lienFinal}`);
 
     return {
       succes: true,
@@ -168,8 +167,8 @@ async function televerserDocumentWord({ nomFichier, buffer, dossierId }) {
 
   } catch (error) {
     if (error.message && error.message.includes('storage quota')) {
-      console.error('[GoogleDriveService] Quota insuffisant : le Compte de Service possède 0 Go alloué par Google sur compte perso.');
-      console.error('[GoogleDriveService] Pour un compte personnel @gmail.com, lancez : node scripts/connecter-drive.js');
+      console.error('[GoogleDriveService] Erreur de quota : le compte de service ne dispose pas d\'espace alloué.');
+      console.error('[GoogleDriveService] Utiliser l\'authentification OAuth 2.0 (node scripts/connecter-drive.js).');
     }
     console.error('[GoogleDriveService] Erreur lors du téléversement Google Drive :', error.message);
     throw new Error(`Échec du téléversement Google Drive : ${error.message}`);

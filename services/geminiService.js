@@ -12,29 +12,30 @@ if (!apiKey) {
 const ai = new GoogleGenAI({ apiKey });
 
 /**
- * Seuil en octets (20 Mo) délimitant la stratégie de transmission vers Google Gemini :
- * - En dessous de 20 Mo : transmission directe en mémoire vive via base64 inlineData (ultra-rapide, 0 I/O disque).
- * - Au-delà de 20 Mo (ex: enregistrement audio de réunion de 2h, pesant 40 à 150 Mo) : téléversement
- *   vers l'API Files officielle de Google pour contourner le plafond HTTP payload de 20 Mo.
+ * Seuil en octets (20 Mo) déterminant le mode de transfert vers l'API Gemini :
+ * - < 20 Mo : encodage direct en mémoire (inlineData Base64).
+ * - >= 20 Mo : téléversement via l'API Google Files (fileData) pour contourner la limite de payload HTTP.
  */
 const SEUIL_TAILLE_UPLOAD_FICHIER = 20 * 1024 * 1024; // 20 Mo
 
 /**
- * Modèles sollicités par ordre de priorité.
- * Chaîne de secours : si un modèle est surchargé (503), l'appel bascule immédiatement sur le suivant.
+ * Modèles ordonnés par priorité pour la gestion du basculement (fallback).
+ * En cas de saturation (HTTP 429 / 503), la requête est soumise au modèle suivant.
  */
 const FALLBACK_MODELS = [
   'gemini-3.1-flash-lite',
   'gemini-3.5-flash-lite',
-  'gemini-3.5-flash',
+  'gemini-3.6-flash',
   'gemini-3.8-flash'
 ];
 
 const PROMPT_INSTRUCTIONS = `Tu es un consultant senior chargé de produire des comptes rendus de réunion exploitables par un décideur.
-Analyse les notes, le document ou l'enregistrement audio fourni (notes brutes, désordonnées, avec fautes ou abréviations) et réponds uniquement avec un objet JSON contenant exactement ces 4 clés :
+Analyse les notes, le document ou l'enregistrement audio fourni (notes brutes, désordonnées, avec fautes ou abréviations) et réponds uniquement avec un objet JSON contenant exactement ces 6 clés :
 {
-  "client": "Nom de l'organisation ou du client concerné, sans civilité ni titre. Si plusieurs, celui pour qui le travail est réalisé. Si absent : null",
-  "date": "Date de la réunion au format YYYY-MM-DD. Utilise la date du jour fournie à la fin de ce message pour compléter une année manquante ou convertir une date relative (hier, jeudi dernier). Si aucune date de réunion n'est identifiable dans le contenu, renvoie null. Ne devine jamais.",
+  "titre": "Titre explicite et percutant du compte-rendu en 5 à 10 mots maximum (ex: 'Cadrage technique et dimensionnement de la chambre froide', 'Revue d\\'avancement et arbitrages budgétaires', 'Validation des spécifications de la centrale solaire'). Ce titre doit résumer le sujet concret abordé, sans se contenter de recopier uniquement le nom du client ou du projet.",
+  "projet": "Nom complet ou sujet du projet concerné tel qu'il est mentionné ou déduit des notes (ex: 'Étude de faisabilité d’un entrepôt frigorifique', 'Formation des agents au budget participatif', 'Évaluation d’un programme d’énergie solaire'). Si aucun projet spécifique n'est identifiable : null",
+  "client": "Nom complet de l'organisation ou du client concerné tel qu'il est désigné dans les notes (conserve l'intitulé complet sans le tronquer, y compris les mentions comme 'Demo', filiales ou branches d'activité, ex: 'Ravinala Logistique Demo', 'Commune d’Ambatolampy Demo', 'Fonds Océan Indien Demo'). Si plusieurs, celui pour qui le travail est réalisé. Si absent : null",
+  "date": "Date de la réunion au format ISO : YYYY-MM-DD, ou YYYY-MM-DDTHH:mm:ss si l'heure de début de réunion est mentionnée dans les notes (ex: '14h30' -> '14:30:00', '10h' -> '10:00:00'). Utilise la date du jour fournie à la fin de ce message pour compléter une année manquante ou convertir une date relative (hier, jeudi dernier). Si aucune date de réunion n'est identifiable dans le contenu, renvoie null. Ne devine jamais.",
   "synthese": "Synthèse structurée en 5 à 8 lignes, une rubrique par ligne, dans cet ordre : 'Avancement : ...', 'Décisions prises : ...', 'Points en attente : ...', 'Budget et délais : ...', 'Risques : ...', 'Opportunités : ...' (pistes commerciales ou projets futurs évoqués, sans les transformer en actions). Omets une rubrique si le contenu n'en parle pas.",
   "actions": "Une action par ligne, commençant par un tiret, au format : - Action (Responsable : X, Échéance : Y). Écris 'non précisé' quand le responsable ou l'échéance n'est pas indiqué."
 }
@@ -79,20 +80,19 @@ function normaliserMimeTypeAudio(extension, mimeTypeClient) {
 }
 
 /**
- * Prépare la Part pour un fichier binaire (audio ou PDF).
- * Si le fichier est < 20 Mo : encodage direct en mémoire via inlineData (rapide, sans I/O disque).
- * Si le fichier est >= 20 Mo (ex: enregistrement audio de 2h) : téléversement vers l'API Google Files
- * via un fichier temporaire sur disque, puis génération d'une référence fileData.
+ * Prépare la charge binaire (audio ou document) pour l'API Gemini.
+ * Fichiers < 20 Mo : encodage Base64 direct en mémoire tampon.
+ * Fichiers >= 20 Mo : téléversement vers l'API Google Files avec nettoyage différé.
  *
  * @param {Object} params
- * @param {Buffer} params.buffer Contenu binaire du fichier en mémoire RAM.
- * @param {string} params.mimeType Type MIME normalisé (ex: audio/mp3, application/pdf).
- * @param {string} params.originalname Nom d'origine du fichier.
- * @param {number} params.size Taille en octets du fichier.
+ * @param {Buffer} params.buffer Données binaires du fichier.
+ * @param {string} params.mimeType Type MIME normalisé.
+ * @param {string} params.originalname Nom du fichier source.
+ * @param {number} params.size Taille en octets.
  * @returns {Promise<{ part: Object, cleanup: Function }>}
  */
 async function creerPartFichier({ buffer, mimeType, originalname, size }) {
-  // Cas 1 : Fichier sous le seuil de 20 Mo -> Transmission directe en base64 (RAM pure)
+  // Fichier inférieur au seuil : transmission directe Base64 en mémoire
   if (size < SEUIL_TAILLE_UPLOAD_FICHIER) {
     return {
       part: {
@@ -101,12 +101,12 @@ async function creerPartFichier({ buffer, mimeType, originalname, size }) {
           data: buffer.toString('base64')
         }
       },
-      cleanup: async () => { } // Aucun nettoyage requis
+      cleanup: async () => { }
     };
   }
 
-  // Cas 2 : Fichier volumineux (>= 20 Mo, ex: réunion audio de 2h) -> Google Files API
-  console.log(`[GeminiService] Fichier volumineux détecté (${(size / (1024 * 1024)).toFixed(1)} Mo). Passage par l'API Google Files...`);
+  // Fichier volumineux (>= 20 Mo) : téléversement via l'API Google Files
+  console.log(`[GeminiService] Fichier volumineux détecté (${(size / (1024 * 1024)).toFixed(1)} Mo). Traitement via Google Files API...`);
 
   const ext = path.extname(originalname || '') || '.tmp';
   const nomFichierTemp = `reportflow-${Date.now()}-${Math.random().toString(36).substring(2, 8)}${ext}`;
@@ -115,7 +115,7 @@ async function creerPartFichier({ buffer, mimeType, originalname, size }) {
   let uploadedFile = null;
 
   try {
-    // Écriture temporaire sur disque pour permettre l'upload via stream/fichier du SDK
+    // Écriture temporaire requise par l'API de téléversement du SDK
     await fs.promises.writeFile(cheminTemp, buffer);
 
     uploadedFile = await ai.files.upload({
@@ -126,20 +126,20 @@ async function creerPartFichier({ buffer, mimeType, originalname, size }) {
       }
     });
 
-    console.log(`[GeminiService] Téléversement réussi vers Google Files (Ressource : ${uploadedFile.name}).`);
+    console.log(`[GeminiService] Fichier synchronisé sur Google Files (${uploadedFile.name}).`);
 
-    // Vérification du statut de traitement si nécessaire (pour les fichiers lourds)
+    // Attente de disponibilité de la ressource distante si nécessaire
     let fichierGoogle = uploadedFile;
     let tentatives = 0;
     while (fichierGoogle.state === 'PROCESSING' && tentatives < 30) {
       tentatives++;
-      console.log(`[GeminiService] Traitement en cours chez Google... (tentative ${tentatives})`);
+      console.log(`[GeminiService] Traitement distant en cours (tentative ${tentatives})...`);
       await new Promise((resolve) => setTimeout(resolve, 2000));
       fichierGoogle = await ai.files.get({ name: uploadedFile.name });
     }
 
     if (fichierGoogle.state === 'FAILED') {
-      throw new Error(`Le traitement du fichier par Google a échoué (${fichierGoogle.error?.message || 'state FAILED'}).`);
+      throw new Error(`Le traitement du fichier a échoué (${fichierGoogle.error?.message || 'state FAILED'}).`);
     }
 
     const part = {
@@ -150,30 +150,30 @@ async function creerPartFichier({ buffer, mimeType, originalname, size }) {
     };
 
     const cleanup = async () => {
-      // 1. Nettoyage du fichier temporaire local sur le disque du serveur
+      // Suppression du fichier temporaire local
       try {
         if (fs.existsSync(cheminTemp)) {
           await fs.promises.unlink(cheminTemp);
         }
       } catch (errLocal) {
-        console.warn(`[GeminiService] Avertissement suppression locale (${cheminTemp}) :`, errLocal.message);
+        console.warn(`[GeminiService] Erreur suppression locale (${cheminTemp}) :`, errLocal.message);
       }
 
-      // 2. Nettoyage de la ressource distante sur Google Files pour respecter la confidentialité et préserver le quota
+      // Suppression de la ressource distante sur Google Files
       try {
         if (uploadedFile && uploadedFile.name) {
           await ai.files.delete({ name: uploadedFile.name });
-          console.log(`[GeminiService] Fichier distant nettoyé (${uploadedFile.name}).`);
+          console.log(`[GeminiService] Ressource distante purgée (${uploadedFile.name}).`);
         }
       } catch (errDistant) {
-        console.warn(`[GeminiService] Avertissement suppression distante (${uploadedFile?.name}) :`, errDistant.message);
+        console.warn(`[GeminiService] Erreur suppression distante (${uploadedFile?.name}) :`, errDistant.message);
       }
     };
 
     return { part, cleanup };
 
   } catch (error) {
-    // En cas d'échec durant la phase d'upload, supprimer immédiatement le fichier temporaire local
+    // Nettoyage immédiat en cas d'erreur
     try {
       if (fs.existsSync(cheminTemp)) {
         await fs.promises.unlink(cheminTemp);
@@ -184,13 +184,12 @@ async function creerPartFichier({ buffer, mimeType, originalname, size }) {
 }
 
 /**
- * Prépare les parties (parts) du message multimodal pour l'API Gemini.
- * Assemble le texte de consigne et les données (documents ou pistes audio) selon la stratégie optimale.
+ * Construit les éléments de contenu (parts) pour la requête multimodale Gemini.
  *
  * @param {Object} params
- * @param {string} [params.texteBrut] Notes saisies au clavier ou consignes additionnelles.
- * @param {Object} [params.fichier] Objet fichier Multer (buffer, mimetype, originalname, size).
- * @returns {Promise<{ parts: Array, cleanup: Function }>} Tableau de parties prêtes pour generateContent et fonction de nettoyage.
+ * @param {string} [params.texteBrut] Texte brut de réunion ou consignes complémentaires.
+ * @param {Object} [params.fichier] Fichier uploadé (Multer).
+ * @returns {Promise<{ parts: Array<Object>, cleanup: Function }>}
  */
 async function preparerRequeteGemini({ texteBrut, fichier }) {
   const dateJour = new Date().toLocaleDateString('en-CA', { timeZone: 'Indian/Antananarivo' });
@@ -200,7 +199,7 @@ async function preparerRequeteGemini({ texteBrut, fichier }) {
     texteContexte += `\n\nNotes ou consignes complémentaires :\n${texteBrut.trim()}`;
   }
 
-  // 1. Cas sans pièce jointe : analyse textuelle classique
+  // Analyse textuelle sans fichier joint
   if (!fichier) {
     return {
       parts: [{ text: texteContexte }],
@@ -211,7 +210,7 @@ async function preparerRequeteGemini({ texteBrut, fichier }) {
   const extension = path.extname(fichier.originalname || '').toLowerCase();
   const mimeType = fichier.mimetype || '';
 
-  // 2. Cas Audio : enregistrements vocaux, dictaphones, réunions enregistrées (.mp3, .m4a, .wav...)
+  // Fichiers audio
   const extensionsAudio = ['.mp3', '.m4a', '.wav', '.aac', '.ogg', '.flac', '.webm'];
   if (extensionsAudio.includes(extension) || mimeType.startsWith('audio/')) {
     const typeAudio = normaliserMimeTypeAudio(extension, mimeType);
@@ -233,7 +232,7 @@ async function preparerRequeteGemini({ texteBrut, fichier }) {
     };
   }
 
-  // 3. Cas PDF : lecture multimodale directe du document vectoriel
+  // Documents PDF
   if (mimeType === 'application/pdf' || extension === '.pdf') {
     texteContexte += `\n\nVeuillez analyser le document PDF joint "${fichier.originalname}" :`;
 
@@ -253,7 +252,7 @@ async function preparerRequeteGemini({ texteBrut, fichier }) {
     };
   }
 
-  // 4. Cas Word .docx : extraction préalable du texte via Mammoth (toujours léger en mémoire)
+  // Documents Word (.docx) : extraction textuelle via Mammoth
   if (extension === '.docx' || mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
     const resultatExtraction = await mammoth.extractRawText({ buffer: fichier.buffer });
     const texteDocument = resultatExtraction.value || '';
@@ -265,7 +264,7 @@ async function preparerRequeteGemini({ texteBrut, fichier }) {
     };
   }
 
-  // 5. Cas Texte brut .txt
+  // Documents texte brut (.txt)
   if (extension === '.txt' || mimeType === 'text/plain') {
     const texteFichier = fichier.buffer.toString('utf-8');
     texteContexte += `\n\nContenu du document texte "${fichier.originalname}" :\n${texteFichier}`;
@@ -279,13 +278,12 @@ async function preparerRequeteGemini({ texteBrut, fichier }) {
 }
 
 /**
- * Analyse tout type de contenu (texte, PDF, Word, ou audio jusqu'à 2h) et renvoie le JSON validé.
- * Gère la chaîne de fallback résiliente et garantit le nettoyage des ressources temporaires.
+ * Orchestre l'analyse multimodale avec basculement automatique en cas de charge élevée.
  *
  * @param {Object} options
  * @param {string} [options.texteBrut] Texte brut de réunion.
  * @param {Object} [options.fichier] Fichier uploadé en mémoire.
- * @returns {Promise<{client: string, synthese: string, actions: string}>} Données structurées.
+ * @returns {Promise<{ client: string|null, date: string|null, synthese: string, actions: string }>}
  */
 async function analyserContenu({ texteBrut, fichier }) {
   if ((!texteBrut || !texteBrut.trim()) && !fichier) {
@@ -313,10 +311,34 @@ async function analyserContenu({ texteBrut, fichier }) {
 
         const resultat = JSON.parse(response.text);
 
-        // Validation stricte et normalisation de la date retournée par Gemini
+        // Normalisation et assainissement des champs extraits
         if (resultat && typeof resultat === 'object') {
           const dateStr = resultat.date ? String(resultat.date).trim() : null;
-          resultat.date = (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) ? dateStr : null;
+          resultat.date = (dateStr && /^(\d{4}-\d{2}-\d{2})(?:T(\d{2}:\d{2}(?::\d{2})?))?$/.test(dateStr)) ? dateStr : null;
+
+          const nettoyerTexte = (val) => {
+            if (!val) return null;
+            const str = String(val).trim();
+            return (str.toLowerCase() === 'null' || str.toLowerCase() === 'non précisé' || str.toLowerCase() === 'aucun') ? null : str;
+          };
+
+          resultat.client = nettoyerTexte(resultat.client);
+          resultat.projet = nettoyerTexte(resultat.projet);
+          
+          let titre = nettoyerTexte(resultat.titre);
+          // Si le titre est absent, fabriquer un titre propre et représentatif
+          if (!titre) {
+            if (resultat.projet && resultat.client) {
+              titre = `Point d'avancement - ${resultat.projet}`;
+            } else if (resultat.projet) {
+              titre = `Compte-rendu - ${resultat.projet}`;
+            } else if (resultat.client) {
+              titre = `Compte-rendu de réunion - ${resultat.client}`;
+            } else {
+              titre = 'Compte-rendu de réunion opérationnelle';
+            }
+          }
+          resultat.titre = titre;
         }
 
         return resultat;
@@ -326,7 +348,7 @@ async function analyserContenu({ texteBrut, fichier }) {
       }
     }
 
-    throw new Error(`Échec de l'analyse IA sur tous les modèles : ${lastError?.message || 'Erreur inconnue'}`);
+    throw new Error(`Échec du traitement du contenu sur l'ensemble des modèles disponibles : ${lastError?.message || 'Erreur inconnue'}`);
   } finally {
     if (typeof cleanup === 'function') {
       await cleanup();

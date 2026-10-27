@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ReportFlow — Notes, Documents & Synthèses Notion</title>
   
-  <!-- Polices Google : Plus Jakarta Sans (titres doux) & Inter (confort de lecture) -->
+  <!-- Typographies Google Fonts (Plus Jakarta Sans & Inter) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
@@ -84,7 +84,7 @@
 </head>
 <body class="min-h-full flex flex-col font-sans bg-[#131418] text-slate-200">
 
-  <!-- Barre supérieure sobre et aérée -->
+  <!-- En-tête de navigation -->
   <header class="border-b border-[#232630] bg-[#16181e]/90 sticky top-0 z-20 backdrop-blur-md">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
       
@@ -100,18 +100,34 @@
         </div>
       </div>
 
-      <!-- Cloud Status Hub : Accès direct Google Drive & Notion -->
+      <!-- Liens d'accès Cloud (Drive & Notion) -->
       <div class="flex items-center space-x-2 sm:space-x-2.5">
+
+        <!-- Bouton d'ouverture du guide de démonstration -->
+        <button 
+          type="button" 
+          id="btn-open-guide-header"
+          class="group flex items-center space-x-1.5 text-xs bg-gradient-to-r from-sky-500/10 hover:from-sky-500/20 to-indigo-500/10 hover:to-indigo-500/20 border border-sky-500/30 hover:border-sky-400/50 text-sky-200 hover:text-white px-2.5 sm:px-3 py-1.5 rounded-full transition-all duration-200 shadow-sm cursor-pointer"
+          title="Guide du test et fonctionnement de la démo"
+        >
+          <svg class="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+          </svg>
+          <span class="font-medium hidden sm:inline">Guide Démo</span>
+          <span class="font-medium sm:hidden">Guide</span>
+        </button>
         
-        <!-- Badge interactif Google Drive -->
+        <!-- Accès Google Drive -->
         <a 
-          href="<%= locals.driveUrl || '#' %>" 
+          href="<%= locals.driveUrl || 'https://drive.google.com/drive/folders/1E0JuMIXHv3cTl3GsP-Tl5ilqp5C1iX7Z?usp=drive_link' %>" 
           target="_blank" 
           rel="noopener noreferrer"
           class="group flex items-center space-x-2 text-xs bg-[#191b22] hover:bg-[#20232d] border border-[#262933] hover:border-[#383d4c] px-3 py-1.5 rounded-full transition-all duration-200 shadow-sm"
           title="Ouvrir le dossier des comptes-rendus dans Google Drive"
         >
-          <!-- SVG officiel Google Drive -->
+          <!-- Icône Google Drive -->
           <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
             <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
             <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
@@ -127,15 +143,15 @@
           </svg>
         </a>
 
-        <!-- Badge interactif Notion -->
+        <!-- Accès Notion -->
         <a 
-          href="<%= locals.notionUrl || '#' %>" 
+          href="<%= locals.notionUrl || 'https://app.notion.com/p/Accueil-4026955c3b6480b097e9fdc8171e8edf?pvs=12' %>" 
           target="_blank" 
           rel="noopener noreferrer"
           class="group flex items-center space-x-2 text-xs bg-[#191b22] hover:bg-[#20232d] border border-[#262933] hover:border-[#383d4c] px-3 py-1.5 rounded-full transition-all duration-200 shadow-sm"
-          title="Ouvrir la base de données Notion"
+          title="Ouvrir l'accueil Notion"
         >
-          <!-- SVG officiel Notion -->
+          <!-- Icône Notion -->
           <svg class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover:scale-110" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M6.015 13.513c3.424 2.71 4.544 2.56 10.822 2.128l58.987-4.256c2.428-.148 3.14-.852 2.28-2.71L73.978 2.378C72.552.41 70.418 0 67.57 0L10.005 3.968C6.301 4.248 5.161 5.39 5.73 7.828l.285 5.685z" fill="#ffffff"/>
             <path fill-rule="evenodd" clip-rule="evenodd" d="M13.435 25.105v62.463c0 4.148 2.14 5.86 6.85 5.568l62.98-3.708c4.71-.282 5.28-3.284 5.28-6.998V20.106c0-3.714-1.57-5.286-4.99-4.998L18.425 18.96c-3.71.282-4.99 2.428-4.99 6.145zm58.557 3.568c.285 1.285-.43 2.57-1.854 2.71l-3.57.574v43.275c-2.14 1.144-4.566 1.855-6.85 1.855-3.71 0-5.14-1.285-7.994-4.714L34.56 42.667v26.99l5.14 1.143c1.425.286 1.854 1.57 1.425 2.856-.43 1.286-1.57 1.57-3.71 1.713l-11.42 1.002c-1.43.143-2.14-.716-1.712-2.144.285-1.286 1.14-2.144 2.567-2.429l3.996-.572V34.526l-4.71-.43c-1.427-.143-2-1.286-1.57-2.57.428-1.286 1.57-1.572 3.71-1.715l13.13-1.143 18.27 28.277V32.955l-4.28-.572c-1.427-.143-1.855-1.429-1.427-2.714.43-1.286 1.57-1.572 3.71-1.715l11.42-.714c1.712-.143 2.14.714 2.568 2.428z" fill="#ffffff"/>
@@ -152,10 +168,10 @@
     </div>
   </header>
 
-  <!-- Corps de page -->
+  <!-- Contenu principal -->
   <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
     
-    <!-- En-tête : Ce que fait l'outil -->
+    <!-- Titre et synthèse d'introduction -->
     <div class="text-center max-w-2xl mx-auto mb-8">
       <h1 class="text-xl sm:text-2xl font-heading font-bold text-slate-100 tracking-tight">
         Rédigez vos notes, obtenez un résumé clair
@@ -164,10 +180,10 @@
         Collez vos notes ou déposez un audio. Nous extrayons le client, générons un rapport Word officiel et synchronisons la fiche en direct dans Notion et Google Drive.
       </p>
 
-      <!-- Schéma visuel en 3 étapes avec vraies icônes vectorielles -->
+      <!-- Workflow en 3 étapes -->
       <div class="mt-5 inline-flex items-center justify-center gap-2 sm:gap-4 py-2 px-4 rounded-xl bg-[#191b22] border border-[#262933] text-xs text-slate-400 shadow-sm">
         
-        <!-- Étape 1 -->
+        <!-- Étape 1 : Saisie -->
         <span class="flex items-center gap-1.5 text-slate-300 font-medium">
           <svg class="w-3.5 h-3.5 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
@@ -179,7 +195,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
         </svg>
 
-        <!-- Étape 2 -->
+        <!-- Étape 2 : Traitement IA -->
         <span class="flex items-center gap-1.5 text-slate-300 font-medium">
           <svg class="w-3.5 h-3.5 text-sky-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
@@ -191,7 +207,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
         </svg>
 
-        <!-- Étape 3 -->
+        <!-- Étape 3 : Synchronisation -->
         <span class="flex items-center gap-1.5 text-emerald-400 font-medium">
           <svg class="w-3.5 h-3.5 text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>
@@ -202,21 +218,70 @@
       </div>
     </div>
 
-    <!-- Espace de travail en 2 colonnes -->
+    <!-- Avertissement d'environnement de test -->
+    <aside 
+      id="demo-privacy-notice" 
+      class="mb-6 rounded-2xl bg-gradient-to-r from-amber-500/[0.08] via-[#1a1c24] to-amber-500/[0.04] border border-amber-500/25 p-3.5 sm:p-4 shadow-sm backdrop-blur-sm transition-all duration-300"
+      aria-label="Avertissement de confidentialité"
+    >
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start space-x-3 min-w-0">
+          <!-- Icône d'avertissement -->
+          <div class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center shrink-0 text-amber-400 mt-0.5 shadow-inner">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          
+          <div class="text-xs leading-relaxed text-slate-300">
+            <span class="font-semibold text-amber-300 mr-1">
+              Démo Live & Bac à sable :
+            </span>
+            Cette application est connectée en temps réel à un CRM Notion et un Google Drive de test. Les données saisies sont publiques : n’importez aucune donnée réelle.
+            <button 
+              type="button" 
+              id="btn-open-guide-notice" 
+              class="ml-1 inline-flex items-center gap-1 font-semibold text-amber-300 hover:text-white underline decoration-amber-400/50 hover:decoration-white underline-offset-2 transition-colors cursor-pointer"
+            >
+              <span>Comment tester & comprendre les coulisses Cloud ?</span>
+              <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bouton de masquage de la notice -->
+        <button 
+          type="button" 
+          id="btn-dismiss-privacy" 
+          class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-white/5 transition-colors shrink-0 cursor-pointer" 
+          title="Masquer cet avertissement"
+          aria-label="Fermer la notice"
+        >
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Grille principale de travail -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       
-      <!-- ============================================== -->
-      <!-- PANNEAU GAUCHE : Saisie des notes (6 cols)     -->
-      <!-- ============================================== -->
+      <!-- Colonne gauche : Saisie et téléversement -->
       <section class="lg:col-span-6 space-y-3">
         
         <div class="calm-card rounded-2xl overflow-hidden">
           
-          <!-- Haut de l'éditeur avec vraies icônes vectorielles -->
+          <!-- Barre d'outils de l'éditeur -->
           <div class="flex items-center justify-between px-5 py-3 border-b border-[#252834] bg-[#16181f]/60">
             <span class="text-xs font-semibold text-slate-300">Vos notes brutes</span>
 
-            <!-- Boutons avec icônes appropriées -->
+            <!-- Actions d'édition -->
             <div class="flex items-center space-x-1.5 text-xs">
               
               <!-- Bouton Exemple -->
@@ -261,16 +326,39 @@
             </div>
           </div>
 
-          <!-- Zone de texte et dépôt de document -->
+          <!-- Formulaire de saisie et upload -->
           <form id="form-analyse" class="p-5 space-y-4">
+            
+            <!-- Alerte visuelle : Verrouillage du texte quand un fichier est joint -->
+            <div id="banner-fichier-actif" class="hidden p-3 rounded-xl bg-sky-950/40 border border-sky-800/50 text-xs text-sky-200 flex items-center justify-between gap-3 animate-calm">
+              <div class="flex items-center space-x-2.5 min-w-0">
+                <div class="w-6 h-6 rounded-lg bg-sky-500/20 text-sky-300 flex items-center justify-center shrink-0">
+                  <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <p class="font-medium text-slate-100">Mode Document / Audio actif</p>
+                  <p class="text-[11px] text-sky-300/80 truncate">La saisie de texte est verrouillée pour garantir que seul ce fichier soit traité.</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                id="btn-unlock-text" 
+                class="text-[11px] font-semibold text-sky-300 hover:text-white underline decoration-sky-400/40 hover:decoration-white transition-colors shrink-0 cursor-pointer"
+              >
+                Retirer le fichier
+              </button>
+            </div>
+
             <textarea 
               id="notes-brutes" 
               rows="10" 
-              placeholder="Collez ou écrivez vos notes ici (ou déposez directement un document ci-dessous)...&#10;&#10;Exemple :&#10;Date de la réunion : 08/01/2026&#10;Client : Ravinala Airports&#10;Point d'avancement sur l'étude d'impact environnemental..."
-              class="w-full bg-transparent border-0 p-0 text-slate-100 placeholder-slate-500 focus:ring-0 focus:outline-none text-sm leading-relaxed resize-y font-sans"
+              placeholder="Collez ou écrivez vos notes ici (ou déposez directement un document ci-dessous)...&#10;&#10;Exemple :&#10;Date de la réunion : 08/01/2026&#10;Client : Fonds Océan Indien Demo&#10;Point d'avancement sur l'étude d'impact environnemental..."
+              class="w-full bg-transparent border-0 p-0 text-slate-100 placeholder-slate-500 focus:ring-0 focus:outline-none text-sm leading-relaxed resize-y font-sans transition-opacity"
             ></textarea>
 
-            <!-- Zone de dépôt de document ou enregistrement audio (PDF, Word, MP3, M4A, etc.) -->
+            <!-- Zone de téléversement (Documents et Audio) -->
             <div class="space-y-2">
               <input 
                 type="file" 
@@ -279,7 +367,29 @@
                 class="hidden"
               >
 
-              <!-- Dropzone cliquable & glisser-déposer -->
+              <!-- Notice de verrouillage quand du texte est saisi -->
+              <div id="dropzone-locked-notice" class="hidden p-3 rounded-xl bg-[#16181f]/80 border border-amber-500/30 text-xs text-amber-200/90 flex items-center justify-between gap-3 animate-calm">
+                <div class="flex items-center space-x-2.5 min-w-0">
+                  <div class="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+                    <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="font-medium text-amber-100">Saisie de notes active</p>
+                    <p class="text-[11px] text-amber-300/80">L'import de document est désactivé pour éviter de mélanger deux réunions différentes.</p>
+                  </div>
+                </div>
+                <button 
+                  type="button" 
+                  id="btn-unlock-file" 
+                  class="text-[11px] font-semibold text-amber-300 hover:text-white underline decoration-amber-400/40 hover:decoration-white transition-colors shrink-0 cursor-pointer"
+                >
+                  Effacer les notes
+                </button>
+              </div>
+
+              <!-- Zone de glisser-déposer -->
               <div 
                 id="dropzone"
                 class="border border-dashed border-[#2d313e] hover:border-slate-500 bg-[#16181f]/40 hover:bg-[#1a1c24] rounded-xl p-3 text-center cursor-pointer transition-all flex items-center justify-between gap-3 group"
@@ -300,7 +410,7 @@
                 </span>
               </div>
 
-              <!-- Badge du fichier sélectionné -->
+              <!-- Indicateur de fichier sélectionné -->
               <div id="file-chip" class="hidden items-center justify-between p-2.5 rounded-xl bg-[#1e212b] border border-[#2e3343] text-xs">
                 <div class="flex items-center space-x-2 min-w-0">
                   <svg class="w-4 h-4 text-sky-400 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -324,17 +434,17 @@
               </div>
             </div>
 
-            <!-- Bas de l'éditeur -->
+            <!-- Pied de l'éditeur -->
             <div class="pt-3 border-t border-[#252834] flex flex-col sm:flex-row items-center justify-between gap-3">
               
-              <!-- Compteur de mots et caractères -->
+              <!-- Métriques textuelles -->
               <div class="text-xs text-slate-400 flex items-center space-x-2">
                 <span id="char-count">0 caractère</span>
                 <span class="text-slate-600">•</span>
                 <span id="word-count">0 mot</span>
               </div>
 
-              <!-- Bouton d'action avec vraie icône de génération/envoi -->
+              <!-- Bouton de soumission -->
               <button 
                 type="submit" 
                 id="btn-submit"
@@ -346,7 +456,7 @@
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
 
-                <!-- Vraie icône Lucide Sparkles vectorielle -->
+                <!-- Icône d'action -->
                 <svg id="btn-icon" class="w-4 h-4 text-slate-900" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
                   <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
@@ -360,27 +470,36 @@
 
         </div>
 
-        <!-- Alerte en cas de problème -->
-        <div id="error-box" class="hidden p-4 rounded-xl bg-rose-950/30 border border-rose-900/50 text-rose-200 text-xs">
-          <div class="flex items-start space-x-2.5">
-            <svg class="w-4 h-4 text-rose-400 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
-            </svg>
-            <div>
-              <p class="font-medium text-rose-200">Impossible de compléter l'opération</p>
-              <p id="error-message" class="mt-1 text-rose-300/80 leading-relaxed"></p>
+        <!-- Zone de notification d'erreur -->
+        <div id="error-box" class="hidden relative p-4 rounded-2xl border transition-all duration-300 shadow-lg text-xs" role="alert">
+          <div class="flex items-start space-x-3">
+            <div id="error-icon-wrapper" class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-inner">
+              <span id="error-icon-slot"></span>
             </div>
+            <div class="flex-1 pr-6 space-y-1">
+              <p id="error-title" class="font-heading font-semibold text-sm leading-tight text-white"></p>
+              <p id="error-message" class="text-xs leading-relaxed text-slate-300"></p>
+              <div id="error-tip-container" class="hidden mt-2 pt-2 border-t flex items-start space-x-2 text-[11px]">
+                <span class="shrink-0 font-medium select-none">💡 Conseil :</span>
+                <span id="error-tip" class="leading-relaxed"></span>
+              </div>
+            </div>
+            <!-- Fermeture de la notification -->
+            <button id="btn-close-error" type="button" class="absolute top-3 right-3 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors" title="Fermer ce message">
+              <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
         </div>
 
       </section>
 
-      <!-- ============================================== -->
-      <!-- PANNEAU DROIT : Compte-rendu généré (6 cols)   -->
-      <!-- ============================================== -->
+      <!-- Colonne droite : Restitution et livrables -->
       <section class="lg:col-span-6 space-y-3">
         
-        <!-- ÉTAT 1 : En attente avec icône de carnet vectorielle -->
+        <!-- État initial : En attente de soumission -->
         <div id="result-placeholder" class="calm-card rounded-2xl p-8 text-center flex flex-col items-center justify-center min-h-[400px] border-dashed border-[#2d313e]">
           <div class="w-12 h-12 rounded-xl bg-[#21242e] border border-[#2b2f3d] flex items-center justify-center text-slate-400 mb-3 shadow-inner">
             <svg class="w-6 h-6 text-slate-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
@@ -404,7 +523,7 @@
           </button>
         </div>
 
-        <!-- ÉTAT 2 : En cours de résumé -->
+        <!-- État de chargement : Analyse en cours -->
         <div id="result-skeleton" class="hidden calm-card rounded-2xl p-6 space-y-5">
           <div class="flex items-center space-x-2 text-xs text-slate-300 pb-3 border-b border-[#252834]">
             <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
@@ -428,49 +547,75 @@
           </div>
         </div>
 
-        <!-- ÉTAT 3 : Fiche terminée et enregistrée -->
+        <!-- État final : Résultats et synchronisation -->
         <div id="result-content" class="hidden space-y-3 animate-calm">
           
-              <!-- Bandeau de confirmation Cloud double (Notion & Drive) -->
-            <div class="px-5 py-3 border-b border-[#252834] bg-[#16181f]/80 flex flex-wrap items-center justify-between gap-3">
-              <div class="flex items-center space-x-2.5">
-                <div class="w-6 h-6 rounded-full bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-sm">
-                  <svg class="w-3.5 h-3.5 text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 6 9 17l-5-5"/>
-                  </svg>
-                </div>
-                <div>
-                  <span class="text-xs font-semibold text-slate-100 flex items-center gap-1.5">
-                    Synchronisé avec succès
-                    <span class="text-[10px] text-emerald-300 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded-full font-medium">Notion + Drive</span>
-                  </span>
-                </div>
+            <!-- Statut de synchronisation Cloud -->
+            <div class="px-5 py-3 border-b border-[#252834] bg-[#16181f]/80 flex items-center space-x-2.5">
+              <div class="w-6 h-6 rounded-full bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-sm">
+                <svg class="w-3.5 h-3.5 text-emerald-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6 9 17l-5-5"/>
+                </svg>
               </div>
-
-              <!-- ID Notion & Bouton Copier -->
-              <div class="flex items-center space-x-1.5 text-xs text-slate-400">
-                <span class="text-[11px] font-mono truncate max-w-[130px]" id="notion-page-id"></span>
-                <button 
-                  type="button" 
-                  id="btn-copy-id" 
-                  class="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-[#252834] hover:bg-[#2f3342] text-[11px] text-slate-300 hover:text-white transition-colors"
-                  title="Copier l'identifiant de la page Notion"
-                >
-                  <svg class="w-3 h-3 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-                  </svg>
-                  <span id="copy-label">Copier</span>
-                </button>
-              </div>
+              <span class="text-xs font-semibold text-slate-100">
+                Synchronisé avec succès
+              </span>
+              <!-- ID Notion conservé de manière masquée pour les liens dynamiques -->
+              <span id="notion-page-id" class="hidden"></span>
             </div>
 
-            <!-- Contenu structuré -->
+            <!-- Données structurées du compte-rendu -->
             <div class="p-5 space-y-5">
               
-              <!-- Client -->
-              <div>
-                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Client / Entreprise</span>
-                <h2 id="res-client" class="text-lg font-heading font-bold text-slate-100 mt-0.5"></h2>
+              <!-- Titre du rapport & Entités reliées -->
+              <div class="space-y-3">
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="inline-flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wider text-sky-400 bg-sky-950/50 border border-sky-800/40 px-2.5 py-0.5 rounded-full">
+                      <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                      </svg>
+                      Objet de la séance
+                    </span>
+                  </div>
+                  <h2 id="res-titre" class="text-base sm:text-lg font-heading font-bold text-slate-100 leading-snug"></h2>
+                </div>
+
+                <!-- Grille d'association relationnelle (Projet & Client) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <!-- Projet relié -->
+                  <div class="p-3 rounded-xl bg-[#15171e] border border-[#262934] flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex items-center space-x-2.5">
+                      <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0 text-indigo-400">
+                        <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                        </svg>
+                      </div>
+                      <div class="min-w-0">
+                        <span class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">Projet Notion</span>
+                        <span id="res-projet" class="block text-xs font-medium text-slate-200 truncate">Projet non spécifié</span>
+                      </div>
+                    </div>
+                    <span id="badge-projet" class="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-800/50">Relié</span>
+                  </div>
+
+                  <!-- Client relié -->
+                  <div class="p-3 rounded-xl bg-[#15171e] border border-[#262934] flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex items-center space-x-2.5">
+                      <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 text-emerald-400">
+                        <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                      </div>
+                      <div class="min-w-0">
+                        <span class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400">Client / Prospect</span>
+                        <span id="res-client" class="block text-xs font-medium text-slate-200 truncate">Client non spécifié</span>
+                      </div>
+                    </div>
+                    <span id="badge-client" class="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-800/50">Relié</span>
+                  </div>
+                </div>
               </div>
 
               <!-- Synthèse concise -->
@@ -490,7 +635,7 @@
                 </div>
               </div>
 
-              <!-- Actions à faire (Checklist claire) -->
+              <!-- Actions à mener -->
               <div>
                 <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Choses à faire</span>
                 <div id="actions-checklist" class="mt-2 space-y-2">
@@ -501,7 +646,7 @@
 
             </div>
 
-            <!-- Détail technique replié discrètement -->
+            <!-- Données brutes (JSON) -->
             <div class="px-5 py-2.5 border-t border-[#252834] bg-[#14161c]/40">
               <details class="text-[11px] text-slate-400 cursor-pointer">
                 <summary class="hover:text-slate-300 select-none">Voir les données techniques (JSON)</summary>
@@ -511,7 +656,7 @@
 
           </div>
 
-          <!-- Carte d'Action : Export Word, Google Docs & Notion -->
+          <!-- Actions d'exportation et consultation -->
           <div class="calm-card rounded-2xl p-4 sm:p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border border-[#2d303b] bg-gradient-to-r from-[#171922] via-[#1a1c26] to-[#1e1b24]">
             <div class="flex items-center space-x-3.5">
               <div class="w-10 h-10 rounded-xl bg-[#232634] border border-[#34384a] flex items-center justify-center text-slate-200 shrink-0 shadow-inner">
@@ -528,10 +673,10 @@
               </div>
             </div>
 
-            <!-- Trio de boutons d'action avec logos officiels -->
+            <!-- Boutons d'export et d'ouverture -->
             <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
               
-              <!-- 1. Bouton Ouvrir sur Notion -->
+              <!-- Lien Notion -->
               <a 
                 id="link-notion-action"
                 href="#"
@@ -548,7 +693,7 @@
                 <span>Fiche Notion</span>
               </a>
 
-              <!-- 2. Bouton Ouvrir dans Google Docs (éditable en ligne) -->
+              <!-- Lien Google Docs -->
               <a 
                 id="link-google-docs"
                 href="#"
@@ -569,7 +714,7 @@
                 <span>Google Docs</span>
               </a>
 
-              <!-- 3. Bouton Téléchargement Direct .docx -->
+              <!-- Téléchargement Word -->
               <button 
                 type="button" 
                 id="btn-telecharger-word"
@@ -598,8 +743,260 @@
 
   <!-- Pied de page -->
   <footer class="border-t border-[#20222a] py-4 bg-[#131418] text-center text-xs text-slate-400">
-    <p>ReportFlow • Vos réunions résumées et rangées dans Notion</p>
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>ReportFlow • Vos réunions résumées et rangées dans Notion</p>
+      <button 
+        id="btn-toggle-privacy" 
+        type="button" 
+        class="inline-flex items-center space-x-1.5 text-[11px] text-slate-400 hover:text-sky-300 transition-colors cursor-pointer"
+        title="Ouvrir le guide de démonstration et la notice"
+      >
+        <svg class="w-3.5 h-3.5 text-sky-400/80" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4"/>
+          <path d="M12 8h.01"/>
+        </svg>
+        <span>Guide Démo & Confidentialité</span>
+      </button>
+    </div>
   </footer>
+
+  <!-- ========================================================================= -->
+  <!-- Modal d'accompagnement et contexte métier                                 -->
+  <!-- ========================================================================= -->
+  <div 
+    id="modal-guide-demo" 
+    class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto"
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="modal-guide-title"
+  >
+    <div 
+      class="relative w-full max-w-2xl bg-[#15171f] border border-[#2b3040] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] overflow-hidden my-auto transition-all"
+    >
+      <!-- En-tête modal -->
+      <div class="px-5 py-4 border-b border-[#232736] flex items-center justify-between bg-gradient-to-r from-[#191c26] to-[#15171f]">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-400 shadow-inner">
+            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16v-4"/>
+              <path d="M12 8h.01"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="modal-guide-title" class="text-sm sm:text-base font-heading font-bold text-slate-100">
+                Guide Démonstration & Contexte Métier
+              </h2>
+            </div>
+            <p class="text-[11px] text-slate-400">Comprendre le fonctionnement et observer les résultats en temps réel</p>
+          </div>
+        </div>
+
+        <button 
+          type="button" 
+          id="btn-close-guide-modal"
+          class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+          aria-label="Fermer le guide"
+        >
+          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Contenu modal -->
+      <div class="p-5 sm:p-6 space-y-4 max-h-[72vh] overflow-y-auto text-xs text-slate-300 leading-relaxed">
+        
+        <!-- Section 1 : Périmètre fonctionnel et cas d'usage -->
+        <div class="bg-[#1a1c27] border border-[#262a3a] rounded-xl p-4">
+          <div class="flex items-center gap-2 text-slate-100 font-semibold text-xs mb-1.5">
+            <svg class="w-4 h-4 text-sky-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span>Pour qui et quel problème est résolu ?</span>
+          </div>
+          <p class="text-slate-300 text-[12px] leading-relaxed">
+            Conçu pour les <strong>consultants, chefs de projet et commerciaux B2B</strong> qui perdent 30 à 45 minutes après chaque réunion à réécouter des enregistrements, rédiger des comptes-rendus et renseigner leur CRM.
+          </p>
+          <p class="text-slate-400 text-[11px] mt-1.5">
+            ReportFlow convertit cette friction en une opération instantanée : vous déposez des notes brutes ou un enregistrement audio, l’IA extrait les points clés, produit un livrable Word officiel et synchronise automatiquement le tout dans Notion et Google Drive.
+          </p>
+        </div>
+
+        <!-- Section 2 : Entités clientes et relations CRM -->
+        <div class="bg-gradient-to-br from-[#1e2333] to-[#171a25] border border-sky-500/30 rounded-xl p-4 shadow-sm">
+          <div class="flex items-center gap-2 text-sky-300 font-semibold text-xs mb-2">
+            <svg class="w-4 h-4 text-sky-400 shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <span>Rédigez vos propres notes (Liaison CRM automatique)</span>
+          </div>
+          <p class="text-slate-300 text-[11.5px] leading-relaxed mb-2.5">
+            Vous pouvez tester l'outil en écrivant vous-même vos propres notes brutes. Pour observer la <strong>liaison automatique en direct</strong>, intégrez simplement dans votre texte l’un des 3 clients déjà présents dans notre CRM Notion :
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2.5">
+            <div class="bg-[#12141c]/90 border border-[#2b3044] rounded-lg p-2.5 text-center">
+              <span class="block font-semibold text-slate-100 text-[11px]">Fonds Océan Indien Demo</span>
+              <span class="text-[10px] text-sky-400">Finance & Investissement</span>
+            </div>
+            <div class="bg-[#12141c]/90 border border-[#2b3044] rounded-lg p-2.5 text-center">
+              <span class="block font-semibold text-slate-100 text-[11px]">Commune d’Ambatolampy Demo</span>
+              <span class="text-[10px] text-emerald-400">Collectivité & Travaux</span>
+            </div>
+            <div class="bg-[#12141c]/90 border border-[#2b3044] rounded-lg p-2.5 text-center">
+              <span class="block font-semibold text-slate-100 text-[11px]">Ravinala Logistique Demo</span>
+              <span class="text-[10px] text-indigo-400">Fret & Logistique aéroport</span>
+            </div>
+          </div>
+
+          <p class="text-slate-400 text-[11px] leading-relaxed">
+            Dès que l'IA détecte l'un de ces noms (même écrit au milieu d'un paragraphe désordonné), le compte-rendu est automatiquement relié à la fiche du client dans la colonne <code class="text-sky-300 text-[10px]">Rapports</code> de Notion, sans jamais écraser ses réunions antérieures.
+          </p>
+        </div>
+
+        <!-- Section 3 : Intégrations Notion et Google Drive -->
+        <div>
+          <div class="text-[11px] font-semibold text-slate-200 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+            <span>Les Intégrations Cloud en direct</span>
+            <span class="text-[10px] lowercase text-slate-500 font-normal">Accès direct disponible dans l'en-tête</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            
+            <!-- Intégration Notion -->
+            <div class="bg-[#191b24] border border-[#282d3d] rounded-xl p-3.5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-semibold text-slate-200 text-xs flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6.015 13.513c3.424 2.71 4.544 2.56 10.822 2.128l58.987-4.256c2.428-.148 3.14-.852 2.28-2.71L73.978 2.378C72.552.41 70.418 0 67.57 0L10.005 3.968C6.301 4.248 5.161 5.39 5.73 7.828l.285 5.685z" fill="#ffffff"/>
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M13.435 25.105v62.463c0 4.148 2.14 5.86 6.85 5.568l62.98-3.708c4.71-.282 5.28-3.284 5.28-6.998V20.106c0-3.714-1.57-5.286-4.99-4.998L18.425 18.96c-3.71.282-4.99 2.428-4.99 6.145zm58.557 3.568c.285 1.285-.43 2.57-1.854 2.71l-3.57.574v43.275c-2.14 1.144-4.566 1.855-6.85 1.855-3.71 0-5.14-1.285-7.994-4.714L34.56 42.667v26.99l5.14 1.143c1.425.286 1.854 1.57 1.425 2.856-.43 1.286-1.57 1.57-3.71 1.713l-11.42 1.002c-1.43.143-2.14-.716-1.712-2.144.285-1.286 1.14-2.144 2.567-2.429l3.996-.572V34.526l-4.71-.43c-1.427-.143-2-1.286-1.57-2.57.428-1.286 1.57-1.572 3.71-1.715l13.13-1.143 18.27 28.277V32.955l-4.28-.572c-1.427-.143-1.855-1.429-1.427-2.714.43-1.286 1.57-1.572 3.71-1.715l11.42-.714c1.712-.143 2.14.714 2.568 2.428z" fill="#ffffff"/>
+                    </svg>
+                    CRM & Rapports Notion
+                  </span>
+                  <span class="text-[10px] text-sky-400 font-mono">Relation 1-à-N</span>
+                </div>
+                <p class="text-[11px] text-slate-400 leading-normal">
+                  Chaque réunion génère une ligne propre dans la table des rapports et vient s'ajouter à l'historique complet du client concerné dans la table CRM.
+                </p>
+              </div>
+              <a 
+                href="<%= locals.notionUrl || 'https://app.notion.com/p/Accueil-4026955c3b6480b097e9fdc8171e8edf?pvs=12' %>" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="mt-3 inline-flex items-center justify-between text-[11px] font-medium text-slate-300 hover:text-white bg-[#20232e] hover:bg-[#282d3b] px-2.5 py-1.5 rounded-lg border border-[#2f3445] transition-colors"
+              >
+                <span>Ouvrir l'accueil Notion</span>
+                <svg class="w-3 h-3 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="14" y1="14" y2="10"/>
+                </svg>
+              </a>
+            </div>
+
+            <!-- Intégration Google Drive -->
+            <div class="bg-[#191b24] border border-[#282d3d] rounded-xl p-3.5 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-semibold text-slate-200 text-xs flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                      <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                      <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                      <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                      <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                      <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                      <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                    </svg>
+                    Google Drive & Docs
+                  </span>
+                  <span class="text-[10px] text-emerald-400 font-mono">OAuth 2.0</span>
+                </div>
+                <p class="text-[11px] text-slate-400 leading-normal">
+                  Chaque compte-rendu génère un document Word (.docx) assemblé en RAM, téléversé dans le dossier cible avec conversion en <strong>document collaboratif Google Docs</strong> prêt à l'édition.
+                </p>
+              </div>
+              <a 
+                href="<%= locals.driveUrl || 'https://drive.google.com/drive/folders/1E0JuMIXHv3cTl3GsP-Tl5ilqp5C1iX7Z?usp=drive_link' %>" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="mt-3 inline-flex items-center justify-between text-[11px] font-medium text-slate-300 hover:text-white bg-[#20232e] hover:bg-[#282d3b] px-2.5 py-1.5 rounded-lg border border-[#2f3445] transition-colors"
+              >
+                <span>Voir le dossier Drive</span>
+                <svg class="w-3 h-3 text-slate-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="14" y1="14" y2="10"/>
+                </svg>
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Section 4 : Protocole d'évaluation rapide -->
+        <div class="bg-gradient-to-br from-[#191e2b] to-[#151722] border border-sky-500/25 rounded-xl p-4">
+          <h3 class="text-xs font-semibold text-sky-300 mb-2 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-sky-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            Comment tester la démo en 2 minutes chrono ?
+          </h3>
+
+          <ol class="space-y-2 text-[11px] text-slate-300">
+            <li class="flex items-start gap-2">
+              <span class="w-4 h-4 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+              <span>Cliquez sur <strong>« Exemple démo »</strong> : chaque clic génère une longue note brute réaliste tirée au sort parmi nos 3 clients (Ravinala, Ambatolampy, FOI).</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="w-4 h-4 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+              <span>Cliquez sur <strong>« Créer la fiche Notion »</strong> pour lancer l'analyse IA.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="w-4 h-4 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+              <span>Observez les livrables générés : téléchargez le Word, ouvrez le Google Docs collaboratif, et cliquez sur <strong>« Fiche Notion »</strong> pour voir la réunion ajoutée et liée au client dans le CRM.</span>
+            </li>
+          </ol>
+        </div>
+
+        <!-- Section 5 : Environnement sandbox et sécurité -->
+        <div class="flex items-start gap-2.5 p-3 rounded-lg bg-amber-500/[0.07] border border-amber-500/20 text-[11px] text-amber-200/90">
+          <svg class="w-4 h-4 text-amber-400 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div>
+            <strong class="text-amber-300 font-semibold">Bac à sable public :</strong> L'espace Notion et le dossier Google Drive sont configurés en accès public pour la démonstration. Ne saisissez pas de notes contenant des données personnelles réelles.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Actions modal -->
+      <div class="px-5 py-3.5 bg-[#13151c] border-t border-[#232736] flex items-center justify-between gap-3">
+        <button 
+          type="button" 
+          id="btn-close-guide-footer"
+          class="text-xs text-slate-400 hover:text-slate-200 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+        >
+          Fermer
+        </button>
+
+        <button 
+          type="button" 
+          id="btn-guide-start-test"
+          class="inline-flex items-center gap-1.5 text-xs font-medium text-white bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 px-4 py-2 rounded-xl shadow-lg shadow-sky-500/20 hover:shadow-sky-500/30 transition-all cursor-pointer"
+        >
+          <svg class="w-3.5 h-3.5 text-sky-200" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          <span>Tester avec un exemple</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
 
   <script src="/js/app.js"></script>
 </body>

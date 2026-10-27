@@ -19,16 +19,16 @@ const {
 } = require('docx');
 
 /**
- * Charte Graphique Officielle : Rose Pastel & Rose Blush
- * Couleurs hexadécimales standardisées (sans le préfixe '#' pour la librairie docx).
+ * Charte graphique du document : palette Blush et Pastel.
+ * Codes hexadécimaux conformes au standard OpenXML (sans préfixe '#').
  */
 const PALETTE = {
-  BLUSH_PRINCIPAL: 'C97A7E',   // Rose blush raffiné (titres, accentuations)
-  BLUSH_FONCE: '9C5559',       // Rose blush profond (en-têtes de section et de tableau)
-  PASTEL_FOND: 'FDF6F6',       // Rose pastel très doux (arrière-plan d'encadré)
-  PASTEL_BORDURE: 'ECCECE',    // Bordure rose poudré subtile
-  TEXTE_PRINCIPAL: '23272F',   // Gris ardoise foncé (lecture confortable)
-  TEXTE_SECONDAIRE: '6B7280',  // Gris neutre moyen (métadonnées)
+  BLUSH_PRINCIPAL: 'C97A7E',   // Rose blush principal (titres, bordures actives)
+  BLUSH_FONCE: '9C5559',       // Rose blush foncé (en-têtes et sections)
+  PASTEL_FOND: 'FDF6F6',       // Fond pastel d'encadré
+  PASTEL_BORDURE: 'ECCECE',    // Bordure pastel
+  TEXTE_PRINCIPAL: '23272F',   // Gris ardoise (corps de texte)
+  TEXTE_SECONDAIRE: '6B7280',  // Gris neutre (métadonnées)
   BLANC: 'FFFFFF'
 };
 
@@ -59,31 +59,45 @@ const BORDURES_FINES = {
 };
 
 /**
- * Formate une date en français (ex : 21 octobre 2026).
+ * Formate une date en français (ex : 27 octobre 2026 ou 27 octobre 2026, 14:30).
  *
  * @param {Date} [date] Date à formater (par défaut date du jour).
+ * @param {boolean} [inclureHeure=false] Indique s'il faut afficher l'heure.
  * @returns {string} Date lisible en français.
  */
-function formaterDateFr(date = new Date()) {
-  return date.toLocaleDateString('fr-FR', {
+function formaterDateFr(date = new Date(), inclureHeure = false) {
+  const options = {
     day: 'numeric',
     month: 'long',
     year: 'numeric'
-  });
+  };
+  if (inclureHeure) {
+    options.hour = '2-digit';
+    options.minute = '2-digit';
+  }
+  return date.toLocaleDateString('fr-FR', options);
 }
 
 /**
- * Convertit une chaîne YYYY-MM-DD en Date locale, sans décalage de fuseau horaire.
+ * Convertit une chaîne YYYY-MM-DD ou ISO DateTime en Date locale.
  *
- * @param {string} texte Date au format YYYY-MM-DD.
+ * @param {string} texte Date au format YYYY-MM-DD ou YYYY-MM-DDTHH:mm:ss.
  * @returns {Date|null} Date valide, ou null si le format est incorrect.
  */
 function lireDateIso(texte) {
-  if (!texte || !/^\d{4}-\d{2}-\d{2}$/.test(String(texte).trim())) {
-    return null;
-  }
-  const [annee, mois, jour] = String(texte).trim().split('-').map(Number);
-  const date = new Date(annee, mois - 1, jour);
+  if (!texte) return null;
+  const match = String(texte).trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+  if (!match) return null;
+  const annee = Number(match[1]);
+  const mois = Number(match[2]);
+  const jour = Number(match[3]);
+  const heure = match[4] ? Number(match[4]) : null;
+  const minute = match[5] ? Number(match[5]) : null;
+
+  const date = (heure !== null && minute !== null)
+    ? new Date(annee, mois - 1, jour, heure, minute)
+    : new Date(annee, mois - 1, jour);
+
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
@@ -274,10 +288,10 @@ function creerTitreSection(texte, avant) {
 }
 
 /**
- * Génère un document Word (.docx) professionnel en mémoire vive (Buffer)
- * à partir du JSON structuré de synthèse (Google Gemini).
+ * Génère un document Word (.docx) sous forme de Buffer en mémoire
+ * à partir des données structurées d'analyse.
  *
- * @param {Object} donnees Données issues de l'analyse IA.
+ * @param {Object} donnees Données issues de l'analyse.
  * @param {string} [donnees.client] Nom du client ou intitulé du projet.
  * @param {string} [donnees.date] Date de la réunion au format YYYY-MM-DD, ou null.
  * @param {string} [donnees.synthese] Synthèse structurée par rubriques.
@@ -288,15 +302,18 @@ function creerTitreSection(texte, avant) {
  */
 async function genererDocumentWord(donnees = {}, options = {}) {
   const nomClient = (donnees.client || 'Client non spécifié').trim();
+  const nomProjet = (donnees.projet || '').trim();
+  const titreRapport = (donnees.titre || '').trim();
   const rubriques = extraireRubriques(donnees.synthese);
   const actions = extraireActions(donnees.actions);
 
-  // Deux dates distinctes : la réunion (jamais remplacée par la date du jour) et la rédaction
+  // Distinction entre la date de séance et la date de génération du document
   const dateReunionBrute = lireDateIso(donnees.date);
-  const dateReunion = dateReunionBrute ? formaterDateFr(dateReunionBrute) : 'Non précisée';
-  const dateRedaction = formaterDateFr();
+  const inclureHeure = Boolean(donnees.date && String(donnees.date).includes('T'));
+  const dateReunion = dateReunionBrute ? formaterDateFr(dateReunionBrute, inclureHeure) : 'Non précisée';
+  const dateRedaction = formaterDateFr(new Date(), true);
 
-  // 1. En-tête de page (discret et professionnel sur chaque page)
+  // 1. En-tête de page
   const headerPage = new Header({
     children: [
       new Paragraph({
@@ -311,7 +328,7 @@ async function genererDocumentWord(donnees = {}, options = {}) {
             color: PALETTE.BLUSH_PRINCIPAL
           }),
           new TextRun({
-            text: `  |  Compte-rendu de réunion, ${nomClient}`,
+            text: `  |  ${titreRapport || nomProjet || nomClient}`,
             font: 'Arial',
             size: 16,
             color: PALETTE.TEXTE_SECONDAIRE
@@ -321,7 +338,7 @@ async function genererDocumentWord(donnees = {}, options = {}) {
     ]
   });
 
-  // 2. Pied de page : mention à gauche, numérotation alignée à droite grâce à une tabulation
+  // 2. Pied de page avec pagination
   const footerPage = new Footer({
     children: [
       new Paragraph({
@@ -343,19 +360,26 @@ async function genererDocumentWord(donnees = {}, options = {}) {
     ]
   });
 
-  // 3. Fiche d'identité de la réunion
+  // 3. Métadonnées de séance (Objet, Projet, Client, Date)
+  const rowsMeta = [];
+  if (titreRapport) {
+    rowsMeta.push(creerLigneMeta('Objet / Sujet', titreRapport, { accent: true }));
+  }
+  if (nomProjet) {
+    rowsMeta.push(creerLigneMeta('Projet', nomProjet, { accent: !titreRapport }));
+  }
+  rowsMeta.push(creerLigneMeta('Client / Organisation', nomClient));
+  rowsMeta.push(creerLigneMeta('Date de la réunion', dateReunion, { discret: !dateReunionBrute }));
+  rowsMeta.push(creerLigneMeta('Date de rédaction', dateRedaction));
+  rowsMeta.push(creerLigneMeta('Statut', 'Brouillon, à valider'));
+
   const tableauMeta = new Table({
     width: { size: LARGEUR_PAGE, type: WidthType.DXA },
     columnWidths: [2600, LARGEUR_PAGE - 2600],
-    rows: [
-      creerLigneMeta('Client / Projet', nomClient, { accent: true }),
-      creerLigneMeta('Date de la réunion', dateReunion, { discret: !dateReunionBrute }),
-      creerLigneMeta('Date de rédaction', dateRedaction),
-      creerLigneMeta('Statut', 'Brouillon, à valider')
-    ]
+    rows: rowsMeta
   });
 
-  // 4. Synthèse : un paragraphe par rubrique, nom de la rubrique en gras
+  // 4. Bloc de synthèse structurée
   const paragraphesSynthese = [];
   if (rubriques.length === 0) {
     paragraphesSynthese.push(
@@ -425,7 +449,7 @@ async function genererDocumentWord(donnees = {}, options = {}) {
     ]
   });
 
-  // 5. Plan d'action : tableau Action / Responsable / Échéance
+  // 5. Tableau des actions opérationnelles
   const largeurs = [5000, 2200, LARGEUR_PAGE - 7200];
 
   let blocActions;
@@ -484,11 +508,12 @@ async function genererDocumentWord(donnees = {}, options = {}) {
     ]
   });
 
-  // 6. Assemblage complet du document
+  // 6. Assemblage de la structure documentaire
+  const titreAffichage = titreRapport || 'Compte-Rendu de Réunion';
   const doc = new Document({
     creator: options.auteur || 'ReportFlow',
-    title: `Compte-rendu - ${nomClient}`,
-    description: `Compte-rendu de réunion généré automatiquement pour ${nomClient}`,
+    title: `${titreAffichage} - ${nomClient}`,
+    description: `Compte-rendu de réunion généré automatiquement pour ${nomClient}${nomProjet ? ' (Projet: ' + nomProjet + ')' : ''}`,
     sections: [
       {
         properties: {
@@ -509,9 +534,9 @@ async function genererDocumentWord(donnees = {}, options = {}) {
             spacing: { before: 200, after: 120 },
             children: [
               new TextRun({
-                text: 'Compte-Rendu de Réunion',
+                text: titreAffichage,
                 font: 'Arial',
-                size: 38,
+                size: 34,
                 bold: true,
                 color: PALETTE.BLUSH_FONCE
               })
@@ -542,7 +567,7 @@ async function genererDocumentWord(donnees = {}, options = {}) {
     ]
   });
 
-  // 7. Sérialisation en mémoire vive sous forme de Buffer
+  // 7. Sérialisation binaire OpenXML en mémoire
   return await Packer.toBuffer(doc);
 }
 
